@@ -35,7 +35,7 @@
 							text-color="#fff"
 							default-active="0"
 							active-text-color="#FFF" v-show="TalkList.length>0">
-								<el-menu-item v-for="(item, index) in TalkList" :index="index" class="session-options" :class="{ selected: selectIndex!==index}" @click="talkClick(index)" :key = "index">
+								<el-menu-item v-for="(item, index) in TalkList" :index="index" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
 									<div class="option-l">
 										<el-avatar shape="square" :size="42" :src="item.squareUrl"></el-avatar>
 									</div>
@@ -64,27 +64,80 @@
 								text-color="#fff"
 								default-active="0"
 								active-text-color="#FFF">
-								<el-menu-item v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
-										<template slot="title" class="contact-slice">{{item.slice}}</template>
-										<el-menu-item  class="session-options selected" v-for="(info, index) in item.info" :index="index" :class="{ selected: selectIndex!==index}" @click="talkClick(index)" :key = "index">
-											<div class="option-l">
-												<el-avatar shape="square" :size="42" :src="info.squareUrl"></el-avatar>
+								<el-menu-item-group v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
+									<template slot="title" class="contact-slice">{{item.slice}}</template>
+									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
+										<div class="option-l">
+											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl"></el-avatar>
+										</div>
+										<div class="option-r">
+											<div class="option-line">
+												<div class="dialog-title">{{info.uName}}</div>
 											</div>
-											<div class="option-r">
-												<div class="option-line">
-													<div class="dialog-title">{{info.uName}}</div>
-												</div>
-											</div>
-										</el-menu-item>
-								</el-menu-item>
+										</div>
+									</el-menu-item>
+								</el-menu-item-group>
 							</el-menu>
 						</div>
 					</div>
 				</el-aside>
 				<el-main>
-					<transition name="move" mode="out-in">
-						<router-view></router-view>
-					</transition>
+					<div class="main-inner-r" v-show="activeName==='first'">
+						<div class="chat-box">
+							<div class="contact-header">
+								<div>雷</div>
+							</div>
+							<div class="chat-body">
+								<div class="message-list-scroll">
+									<div class="chat-tips">
+										<div class="tips-info">
+											<i class="app-icon-bag i-lock"></i>
+											<span>此对话中所发送的信息都已进行端到端的加密</span>
+										</div>
+									</div>
+									<div class="message-empty">暂时没有新消息</div>
+								</div>
+							</div>
+							<div class="chat-footer">
+								<div class="input-field">
+									<div class="panel-control">
+										<label class="panel-block app-icon-bag i-face"></label>
+										<label class="panel-block app-icon-bag i-file"><input type="file" class="input-file"></label>
+									</div>
+									<div class="input-control">
+										<div class="input-container">
+											<el-input
+												type="textarea"
+												class="input"
+												v-model="textarea">
+											</el-input>
+											<div contenteditable="false" class="input"></div>
+											<div class="m-hide-seat"></div>
+										</div>
+									</div>
+									<div class="button-control">
+										<div class="btn-label">按下Shift+Enter换行</div>
+										<el-button>发送</el-button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="main-inner-r" v-show="activeName==='second'">
+						<div class="contact-info">
+							<div class="contact-header">
+								<div>查看详情</div>
+							</div>
+							<div class="contact-body">
+								<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second"></el-avatar>
+								<div class="contact-name">
+									<p>{{Friendinfo.uName}}</p>
+									<i class="app-icon-bag i-man"></i>
+								</div>
+								<el-button type="primary" class="btn-success">发送消息</el-button>
+							</div>
+						</div>
+					</div>
 				</el-main>
 			</el-container>
 		</el-scrollbar>
@@ -116,10 +169,26 @@ export default {
 						{
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
 							uName: '白犀牛'
+						},
+						{
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							uName: '白犀牛'
+						}
+					]
+				},
+				{
+					slice: 'c',
+					info: [
+						{
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							uName: 'c犀牛'
 						}
 					]
 				}
-			]
+			],
+			selectFriend: '',
+			Friendinfo: {},
+			textarea: ''
 		}
 	},
 	methods: {
@@ -134,6 +203,10 @@ export default {
 		},
 		talkClick(e) {
 			this.selectIndex = e
+		},
+		FriendClick(listindex, index) {
+			this.selectFriend = listindex + '-' + index
+			this.Friendinfo = this.FriendList[listindex].info[index]
 		}
 	},
 	watch: { // 监测store.state
@@ -179,9 +252,211 @@ export default {
 		/deep/ .el-aside {
 			width: 28.8%!important;
 		}
-		/deep/ .el-main {
-			width: 71.2%!important;;
+		.main-inner-r>div{
+			position:relative;
+			height:100%;
+			width:100%;
+			display: flex;
 		}
+		/deep/ .el-main {
+			width: 71.2%!important;
+			padding: 0;
+			.main-inner-r {
+				height: 100%;
+				overflow: auto;
+				background-color: #eee;
+				.contact-info {
+					flex-direction: column;
+					background-color: inherit;
+					overflow: hidden;
+				}
+				.contact-body {
+					display: flex;
+					align-items: center;
+					flex-direction: column;
+					.user-avatar-second{
+						margin: 80px auto 0 auto;
+						border-radius: 8px;
+						overflow: hidden;
+					}
+					.contact-name{
+						width: 100%;
+						display: flex;
+						justify-content: center;
+						padding-top: 22px;
+						align-items: center;
+						p {
+							display: inline-block;
+							font-size: 18px;
+							max-width: 50%;
+							word-break: break-all;
+							white-space: nowrap;
+							overflow: hidden;
+							text-overflow: ellipsis;
+						}
+						.i-man {
+							height: 18px;
+							width: 18px;
+							background-image: url("../assets/i_man.png");
+						}
+					}
+					.btn-success{
+						display: inline-block;
+						border-radius: 4px;
+						border: none;
+						cursor: pointer;
+						margin-top: 60px;
+						min-width: 220px;
+						font-size: 16px;
+						line-height: 40px;
+						background-color: #00a9e0;
+						color: #fff;
+						padding: 0;
+					}
+				}
+				.chat-box{
+					flex-direction: column;
+					overflow: hidden;
+					.chat-body {
+						order: 2;
+						flex: 1 1 auto;
+						min-height: 0;
+						position: relative;
+						overflow-y: scroll;
+						overflow-x: hidden;
+						width: 100%;
+						.message-list-scroll {
+							padding-top: 6px;
+							.chat-tips {
+								text-align: center;
+								margin-bottom: 14px;
+								.tips-info {
+									display: inline-block;
+									line-height: 30px;
+									padding: 0 20px;
+									font-size: 13px;
+									border-radius: 6px;
+									color: #2b292a;
+									background-color: #faf3c9;
+									.i-lock {
+										position: relative;
+										top: 1px;
+										margin-right: 8px;
+										height: 13px;
+										width: 12px;
+										background-image: url("../assets/lock.png");
+									}
+								}
+							}
+							.message-empty {
+								position: absolute;
+								top: 40%;
+								left: 50%;
+								margin-left: -150px;
+								width: 300px;
+								font-size: 16px;
+								color: #ccc;
+								text-align: center;
+							}
+						}
+					}
+					.chat-footer {
+						order: 3;
+						background-color: #eee;
+						.input-field {
+							padding: 15px 20px 22px 20px;
+							background-color: inherit;
+							border-top: 1px solid #d6d6d6;
+							.panel-control {
+								position: relative;
+								margin-bottom: 10px;
+								.panel-block {
+									margin-right: 16px;
+									overflow: hidden;
+									cursor: pointer;
+								}
+								.i-face {
+									height: 24px;
+									width: 24px;
+									background-image: url("../assets/face.png");
+								}
+								.i-file {
+									height: 24px;
+									width: 24px;
+									background-image: url("../assets/file.png");
+									.input-file {
+										opacity: 0;
+										cursor: pointer;
+									}
+								}
+							}
+							.input-control {
+								margin-bottom: 10px;
+								display: flex;
+								.input-container {
+									flex: 1 1 auto;
+									width: 0;
+									/deep/.input {
+										line-height: 20px;
+										font-size: 14px;
+										user-select: text;
+										word-wrap: break-word;
+										white-space: pre-wrap;
+										cursor: text;
+										background-color:#eee;
+										/deep/.el-textarea__inner{
+											background-color:#eee;
+											resize:none;
+											border: none;
+										}
+										::-webkit-scrollbar{
+											width:6px;
+										}
+										::-webkit-scrollbar-thumb{background-color:rgba(0,0,0,.6)}
+									}
+									.m-hide-seat {
+										height: 1px;
+										visibility: hidden;
+									}
+								}
+							}
+							.button-control {
+								text-align: right;
+								.btn-label {
+									display: inline-block;
+									margin-right: 6px;
+									color: #888;
+									font-size: 14px;
+									button {
+										width: 94px;
+										height: 28px;
+										line-height: 26px;
+										border: 1px solid #9d9d9d;
+										font-size: 14px;
+										background-color: #fff;
+										border-radius: 3px;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	.contact-header {
+		flex: none;
+		justify-content: center;
+		align-content: center;
+		align-items: center;
+		height: 50px;
+		padding: 0;
+		font-size: 16px;
+		background-color: #eee;
+		border-bottom: 1px solid #d6d6d6;
+		cursor: pointer;
+		display: flex;
 	}
 	.inner-l-header{
 		flex: none;
@@ -437,5 +712,8 @@ export default {
 		padding-left: 18px;
 		font-size: 14px;
 		color: #b2b2b2;
+	}
+	/deep/.el-menu-item:hover{
+		background-color: #3a3f45!important;
 	}
 </style>
