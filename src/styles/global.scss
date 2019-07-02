@@ -1,0 +1,10 @@
+body{
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+}
+.el-container,.el-scrollbar__view,.el-scrollbar__wrap{
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+}
