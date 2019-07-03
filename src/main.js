@@ -8,10 +8,15 @@ import 'element-ui/lib/theme-chalk/index.css'
 import Vuex from 'vuex'
 import axios from './util/axios'
 import './styles/global.scss'
+import VueQuillEditor from 'vue-quill-editor'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
 
 Vue.config.productionTip = false
 Vue.prototype.axios = axios
 Vue.use(Vuex)
+Vue.use(VueQuillEditor)
 const store = new Vuex.Store({
 	state: {
 		count: 0

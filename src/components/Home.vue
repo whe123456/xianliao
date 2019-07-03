@@ -35,7 +35,7 @@
 							text-color="#fff"
 							default-active="0"
 							active-text-color="#FFF" v-show="TalkList.length>0">
-								<el-menu-item v-for="(item, index) in TalkList" :index="index" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
+								<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
 									<div class="option-l">
 										<el-avatar shape="square" :size="42" :src="item.squareUrl"></el-avatar>
 									</div>
@@ -127,16 +127,31 @@
 							<div class="chat-footer">
 								<div class="input-field">
 									<div class="panel-control">
-										<label class="panel-block app-icon-bag i-face"></label>
+										<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
 										<label class="panel-block app-icon-bag i-file"><input type="file" class="input-file"></label>
+										<div class="mc" v-show="show_panel" @click="showPanel"></div>
+										<div class="emoticon-panel" v-show="show_panel">
+											<div class="body">
+												<div class="emoticon-content">
+													<table class="emoticon-tb">
+														<tr v-for="(item,index) in empticon" :key = "index">
+															<td v-for="(list,key) in item" :key = "key" @click="checkEmoji(list)"><i data-name="weixiao" class="emoticon-bag" :style="{backgroundImage:'url('+list+')'}"></i></td>
+														</tr>
+													</table>
+												</div>
+												<div class="collection-content"></div>
+											</div>
+											<div class="footer">
+												<div class="emoticon-options emoticon emoticon-options_selected"><i class="app-icon-bag i-emo-face"></i></div>
+											</div>
+										</div>
 									</div>
 									<div class="input-control">
 										<div class="input-container">
-											<el-input
-												type="textarea"
-												class="input"
+											<quill-editor
+												:options="editorOption"
 												v-model="textarea">
-											</el-input>
+											</quill-editor>
 											<div contenteditable="false" class="input"></div>
 											<div class="m-hide-seat"></div>
 										</div>
@@ -226,7 +241,19 @@ export default {
 			],
 			selectFriend: '',
 			Friendinfo: {},
-			textarea: ''
+			textarea: '',
+			empticon: [],
+			show_panel: false,
+			editorOption: {
+				theme: 'bubble',
+				placeholder: '',
+				modules: {
+					toolbar: {
+						container: [],
+						handlers: {}
+					}
+				}
+			}
 		}
 	},
 	methods: {
@@ -246,10 +273,30 @@ export default {
 		FriendClick(listindex, index) {
 			this.selectFriend = listindex + '-' + index
 			this.Friendinfo = this.FriendList[listindex].info[index]
+		},
+		showPanel() {
+			this.show_panel = !this.show_panel
+		},
+		checkEmoji(e) {
+			console.log(e)
+			let textarea = this.textarea
+			textarea = textarea + '<img src="' + e + '" class="input-emo">'
+			console.log(textarea)
+			this.textarea = textarea
 		}
 	},
 	watch: { // 监测store.state
 		'$store.state.adminleftnavnum': 'getNavType'
+	},
+	mounted() {
+		const file = require.context('../assets/empticon/', false, /.png$/).keys()
+		var array = Object.values(file.reduce((res, item, index) => {
+			const src = require('../assets/empticon/' + item.substring(2))
+			res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
+			return res
+		}, {}))
+		console.log(array)
+		this.empticon = array
 	}
 }
 </script>
@@ -524,6 +571,59 @@ export default {
 										cursor: pointer;
 									}
 								}
+								.emoticon-panel {
+									position: absolute;
+									bottom: 50px;
+									left: -10px;
+									width: 473px;
+									border: 1px solid #dedede;
+									background-color: #fff;
+									z-index: 999;
+									.emoticon-content {
+										padding: 14px;
+										.emoticon-tb {
+											width: 100%;
+											table-layout: fixed;
+											border: 1px solid #f0f0f0;
+											td {
+												border: 1px solid #f0f0f0;
+												cursor: pointer;
+											}
+										}
+									}
+									.footer {
+										background-color: #f2f2f2;
+										.emoticon-options {
+											display: inline-block;
+											width: 56px;
+											height: 38px;
+											line-height: 38px;
+											border-radius: 2px;
+											text-align: center;
+											i {
+												position: relative;
+												top: 6px;
+											}
+											.app-icon-bag.i-emo-face {
+												height: 22px;
+												width: 22px;
+												background-image: url("../assets/i_face.png");
+											}
+										}
+										.emoticon-options_selected {
+											background-color: #fff;
+										}
+									}
+								}
+								.emoticon-panel:after {
+									position: absolute;
+									bottom: -11px;
+									left: 13px;
+									content: " ";
+									height: 14px;
+									width: 17px;
+									background-image: url("../assets/bottomIcon.png");
+								}
 							}
 							.input-control {
 								margin-bottom: 10px;
@@ -548,6 +648,12 @@ export default {
 											width:6px;
 										}
 										::-webkit-scrollbar-thumb{background-color:rgba(0,0,0,.6)}
+										.input-emo {
+											display: inline-block;
+											vertical-align: middle;
+											margin-right: 2px;
+											background-size: 100% auto;
+										}
 									}
 									.m-hide-seat {
 										height: 1px;
@@ -868,5 +974,11 @@ export default {
 	}
 	/deep/.el-menu-item:hover{
 		background-color: #3a3f45!important;
+	}
+	/deep/ .ql-editor {
+		padding: 0;
+	}
+	/deep/ .ql-tooltip{
+		display: none;
 	}
 </style>
