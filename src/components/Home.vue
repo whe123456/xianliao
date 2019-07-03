@@ -83,9 +83,15 @@
 				</el-aside>
 				<el-main>
 					<div class="main-inner-r" v-show="activeName==='first'">
-						<div class="chat-box">
+						<div class="inner-r-default" v-if="Object.values(this.Talkinfo).join('') === ''">
+							<div class="tips">
+								<i class="app-icon-bag i-logo3"></i>
+								<div>未选择聊天</div>
+							</div>
+						</div>
+						<div v-else class="chat-box">
 							<div class="contact-header">
-								<div>雷</div>
+								<div>{{Talkinfo.uName}}</div>
 							</div>
 							<div class="chat-body">
 								<div class="message-list-scroll">
@@ -95,7 +101,27 @@
 											<span>此对话中所发送的信息都已进行端到端的加密</span>
 										</div>
 									</div>
-									<div class="message-empty">暂时没有新消息</div>
+									<div class="message-empty" v-if="Talkinfo.list.length===0">暂时没有新消息</div>
+									<div class="message-list" v-else>
+										<div v-for="(item,index) in Talkinfo.list" :key = "index">
+											<div :data-index="item.msgType" class="msg j-msg msg-system mt24" v-if="item.msgType===1">
+												<div class="message-info">{{item.time}}</div>
+											</div>
+											<div data-index="1" class="msg j-msg msg-chat message-out" v-if="item.msgType===2">
+												<div class="message-detail-b">
+													<div class="message-main j-message-main">
+														<div class="message-info blue">
+															<div class="message-info-text"><span>{{item.msg}}</span></div>
+														</div>
+														<div class="message-status"></div>
+													</div>
+												</div>
+												<div class="message-detail-s">
+													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar"></el-avatar>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 							<div class="chat-footer">
@@ -158,9 +184,21 @@ export default {
 					uName: '白犀牛',
 					lastTime: '16:33',
 					lastText: '111',
-					newCount: 0
+					newCount: 0,
+					list: [
+						{
+							time: '09:41',
+							msgType: 1
+						},
+						{
+							msg: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							msgType: 2
+						}
+					]
 				}
 			],
+			Talkinfo: {},
 			selectIndex: '',
 			FriendList: [
 				{
@@ -203,6 +241,7 @@ export default {
 		},
 		talkClick(e) {
 			this.selectIndex = e
+			this.Talkinfo = this.TalkList[e]
 		},
 		FriendClick(listindex, index) {
 			this.selectFriend = listindex + '-' + index
@@ -322,8 +361,7 @@ export default {
 						flex: 1 1 auto;
 						min-height: 0;
 						position: relative;
-						overflow-y: scroll;
-						overflow-x: hidden;
+						overflow: hidden;
 						width: 100%;
 						.message-list-scroll {
 							padding-top: 6px;
@@ -357,6 +395,103 @@ export default {
 								font-size: 16px;
 								color: #ccc;
 								text-align: center;
+							}
+							.msg-system {
+								text-align: center;
+								.message-info {
+									display: inline-block;
+									padding: 0 24px;
+									line-height: 22px;
+									font-size: 13px;
+									border-radius: 4px;
+									background-color: #d4d4d4;
+									color: #fff;
+									user-select: text;
+									max-width: 60%;
+									word-break: break-all;
+								}
+							}
+							.mt24 {
+								margin-top: 24px;
+							}
+							.msg {
+								position: relative;
+								margin-bottom: 15px;
+							}
+							.message-out {
+								justify-content: flex-end;
+								align-items: center;
+								display: flex;
+								.message-status {
+									left: -30px;
+								}
+							}
+
+							.msg-chat {
+								padding: 0 20px;
+								.message-detail-b {
+									margin: 0 16px;
+									max-width: 65%;
+									.message-main {
+										position: relative;
+										font-size: 0;
+										.message-info {
+											position: relative;
+											min-height: 40px;
+											min-width: 50px;
+											font-size: 0;
+											border-radius: 8px;
+											background-color: #fff;
+											user-select: text;
+											text-align: left;
+											white-space: pre-wrap;
+											:before {
+												right: -8px;
+												content: " ";
+												position: absolute;
+												top: 6px;
+												left: -8px;
+												height: 8px;
+												width: 8px;
+												background-size: 100%;
+												background-repeat: no-repeat;
+												background-position: bottom;
+												background-image: url('../assets/rightIcon.png');
+												-webkit-transform: rotateY(0);
+												transform: rotateY(0);
+											}
+											.message-info-text {
+												padding: 9px 15px;
+												font-size: 14px;
+												line-height: 20px;
+											}
+										}
+										.message-info.blue {
+											background-color: #00a9e0;
+											color: #fff;
+										}
+										.blue{
+											:before {
+												left: auto;
+												background-image: url('../assets/blueIcon.png');
+												-webkit-transform: rotateY(0);
+												transform: rotateY(0);
+											}
+										}
+									}
+								}
+								.message-detail-s {
+									display: flex;
+									align-items: center;
+								}
+								.message-status {
+									position: absolute;
+									top: 50%;
+									right: -30px;
+									margin-top: -10px;
+									height: 20px;
+									width: 20px;
+								}
 							}
 						}
 					}
@@ -438,6 +573,24 @@ export default {
 									}
 								}
 							}
+						}
+					}
+				}
+				.inner-r-default {
+					display: flex;
+					flex-direction: column;
+					justify-content: center;
+					align-items: center;
+					font-size: 14px;
+					color: #ccc;
+					.tips {
+						position: relative;
+						bottom: 16%;
+						.i-logo3 {
+							display: inline-block;
+							width: 64px;
+							height: 56px;
+							background-image: url("../assets/icon3.png");
 						}
 					}
 				}
