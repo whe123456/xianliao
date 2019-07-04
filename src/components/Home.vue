@@ -2,16 +2,16 @@
 	<div class="wrapper">
 		<el-scrollbar class="app_main">
 			<el-container>
-				<el-aside class="main-inner-l">
+				<div class="main-inner-l">
 					<div class="inner-l-header">
 						<div class="user-info">
 							<el-avatar class="user-avatar-pic" shape="square" :size="42" :src="squareUrl"></el-avatar>
 							<span class="user-name">{{userName}}</span>
 						</div>
 						<el-dropdown trigger="click">
-				<span class="el-dropdown-link">
-					<i class="i_menu"></i>
-				</span>
+							<span class="el-dropdown-link">
+								<i class="i_menu"></i>
+							</span>
 							<el-dropdown-menu slot="dropdown">
 								<el-dropdown-item><i class="el_icon-bell"></i>关闭桌面通知</el-dropdown-item>
 								<el-dropdown-item><i class="el_icon-button"></i>退出</el-dropdown-item>
@@ -80,7 +80,7 @@
 							</el-menu>
 						</div>
 					</div>
-				</el-aside>
+				</div>
 				<el-main>
 					<div class="main-inner-r" v-show="activeName==='first'">
 						<div class="inner-r-default" v-if="Object.values(this.Talkinfo).join('') === ''">
@@ -107,7 +107,7 @@
 											<div :data-index="item.msgType" class="msg j-msg msg-system mt24" v-if="item.msgType===1">
 												<div class="message-info">{{item.time}}</div>
 											</div>
-											<div data-index="1" class="msg j-msg msg-chat message-out" v-if="item.msgType===2">
+											<div :data-index="item.msgType" class="msg j-msg msg-chat message-out" v-else-if="item.msgType===2">
 												<div class="message-detail-b">
 													<div class="message-main j-message-main">
 														<div class="message-info blue">
@@ -120,6 +120,19 @@
 													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar"></el-avatar>
 												</div>
 											</div>
+											<div data-index="1" class="msg j-msg msg-chat" v-else-if="item.msgType===3">
+												<div class="message-detail-s">
+													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar"></el-avatar>
+												</div>
+												<div class="message-detail-b">
+													<div class="message-main j-message-main">
+														<div class="message-info">
+															<div class="message-info-text"><span>{{item.msg}}</span></div>
+														</div>
+														<div class="message-status"></div>
+													</div>
+												</div>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -128,7 +141,15 @@
 								<div class="input-field">
 									<div class="panel-control">
 										<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
-										<label class="panel-block app-icon-bag i-file"><input type="file" class="input-file"></label>
+										<label class="panel-block app-icon-bag i-file">
+											<el-upload
+												ref="upload"
+												action="https://jsonplaceholder.typicode.com/posts/"
+												:show-file-list="false"
+												:limit="1">
+												<el-button slot="trigger" size="small" type="primary" class="input-file"></el-button>
+											</el-upload>
+										</label>
 										<div class="mc" v-show="show_panel" @click="showPanel"></div>
 										<div class="emoticon-panel" v-show="show_panel">
 											<div class="body">
@@ -148,11 +169,7 @@
 									</div>
 									<div class="input-control">
 										<div class="input-container">
-											<quill-editor
-												:options="editorOption"
-												v-model="textarea">
-											</quill-editor>
-											<div contenteditable="false" class="input"></div>
+											<editor ref="editor" class="input"></editor>
 											<div class="m-hide-seat"></div>
 										</div>
 									</div>
@@ -171,11 +188,11 @@
 							</div>
 							<div class="contact-body">
 								<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second"></el-avatar>
-								<div class="contact-name">
+								<div class="contact-name" v-show="Friendinfo.uName">
 									<p>{{Friendinfo.uName}}</p>
 									<i class="app-icon-bag i-man"></i>
 								</div>
-								<el-button type="primary" class="btn-success">发送消息</el-button>
+								<el-button type="primary" class="btn-success" v-show="Friendinfo.uName" @click="createMsg">发送消息</el-button>
 							</div>
 						</div>
 					</div>
@@ -186,7 +203,11 @@
 </template>
 
 <script>
+import editor from '@/components/Editor'
 export default {
+	components: {
+		editor: editor
+	},
 	data() {
 		return {
 			squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
@@ -209,6 +230,11 @@ export default {
 							msg: 'emmms',
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
 							msgType: 2
+						},
+						{
+							msg: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							msgType: 3
 						}
 					]
 				}
@@ -240,7 +266,9 @@ export default {
 				}
 			],
 			selectFriend: '',
-			Friendinfo: {},
+			Friendinfo: {
+				squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
+			},
 			textarea: '',
 			empticon: [],
 			show_panel: false,
@@ -248,21 +276,12 @@ export default {
 				theme: 'bubble',
 				placeholder: '',
 				modules: {
-					toolbar: {
-						container: [],
-						handlers: {}
-					}
+					toolbar: {}
 				}
 			}
 		}
 	},
 	methods: {
-		getNavType() {
-			this.navselected = this.$store.state.adminleftnavnum // store.state.adminleftnavnum里值变化的时候，设置navselected
-		},
-		selectItems(index) {
-			this.$store.state.adminleftnavnum = index // 按钮选中之后设置当前的index为store里的值。
-		},
 		handleClick(e) {
 			this.activeName = e
 		},
@@ -281,12 +300,23 @@ export default {
 			console.log(e)
 			let textarea = this.textarea
 			textarea = textarea + '<img src="' + e + '" class="input-emo">'
+			// textarea = textarea + '<br/>'
 			console.log(textarea)
 			this.textarea = textarea
+			this.init()
+		},
+		init() {
+			this.$refs.editor.setHtml(this.textarea)
+		},
+		save() {
+			this.textarea = this.$refs.editor.getHtml()
+			console.log(this.textarea)
+		},
+		createMsg() {
+			this.selectIndex = 0
+			this.Talkinfo = this.TalkList[0]
+			this.activeName = 'first'
 		}
-	},
-	watch: { // 监测store.state
-		'$store.state.adminleftnavnum': 'getNavType'
 	},
 	mounted() {
 		const file = require.context('../assets/empticon/', false, /.png$/).keys()
@@ -323,8 +353,6 @@ export default {
 		min-width: 900px;
 		min-height: 550px;
 		background-color: #fff;
-		width: 1000px;
-		height: 690px;
 	}
 	.main-inner-l{
 		position: relative;
@@ -335,9 +363,6 @@ export default {
 		color: #fff;
 	}
 	.el-container {
-		/deep/ .el-aside {
-			width: 28.8%!important;
-		}
 		.main-inner-r>div{
 			position:relative;
 			height:100%;
@@ -476,6 +501,7 @@ export default {
 
 							.msg-chat {
 								padding: 0 20px;
+								display: flex;
 								.message-detail-b {
 									margin: 0 16px;
 									max-width: 65%;
@@ -628,9 +654,21 @@ export default {
 							.input-control {
 								margin-bottom: 10px;
 								display: flex;
+								.input-container::-webkit-scrollbar{
+									width:6px;
+									height: 8px;
+								}
+								.input-container::-webkit-scrollbar-thumb{
+									background-color:rgba(0,0,0,.6);
+								}
+								.input-container::-webkit-scrollbar-button {
+									display: none;
+								}
 								.input-container {
 									flex: 1 1 auto;
 									width: 0;
+									overflow-y: scroll;
+									height: 50px;
 									/deep/.input {
 										line-height: 20px;
 										font-size: 14px;
@@ -639,15 +677,14 @@ export default {
 										white-space: pre-wrap;
 										cursor: text;
 										background-color:#eee;
+										::-webkit-scrollbar{
+											width:0;
+										}
 										/deep/.el-textarea__inner{
 											background-color:#eee;
 											resize:none;
 											border: none;
 										}
-										::-webkit-scrollbar{
-											width:6px;
-										}
-										::-webkit-scrollbar-thumb{background-color:rgba(0,0,0,.6)}
 										.input-emo {
 											display: inline-block;
 											vertical-align: middle;
@@ -980,5 +1017,46 @@ export default {
 	}
 	/deep/ .ql-tooltip{
 		display: none;
+	}
+
+	@media screen and (max-width: 1000px) and (min-width: 900px) {
+		.app_main {
+			height: 100% !important;
+			width: 100%;
+		}
+		.main-inner-l {
+			width: 30%;
+		}
+		.el-main {
+			width: 70%;
+		}
+	}
+	@media screen and (max-width: 900px) {
+		.app_main {
+			height: 100% !important;
+			width: 100%;
+		}
+		.main-inner-l {
+			width: 32%;
+		}
+		.el-main {
+			width: 68%;
+		}
+	}
+	@media screen and (min-width: 1000px) {
+		.app_main {
+			width: 1000px;
+		}
+		.main-inner-l {
+			width: 28.8%;
+		}
+		.el-main {
+			width: 71.2%;
+		}
+	}
+	@media screen and (max-height: 841px) and (min-height: 690px) {
+		.app_main {
+			height: 690px;
+		}
 	}
 </style>

@@ -17,17 +17,11 @@ Vue.config.productionTip = false
 Vue.prototype.axios = axios
 Vue.use(Vuex)
 Vue.use(VueQuillEditor)
-const store = new Vuex.Store({
-	state: {
-		count: 0
-	}
-})
 Vue.use(ElementUI)
 /* eslint-disable no-new */
 new Vue({
 	el: '#app',
 	router,
-	store,
 	components: { App },
 	template: '<App/>'
 })
