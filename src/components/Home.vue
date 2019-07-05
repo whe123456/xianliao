@@ -27,6 +27,9 @@
 							<li class="list-type-option" @click="handleClick('second')">
 								<i class="el_icon_select" :class="{ contact: activeName!=='second', contact2: activeName==='second' }"></i>
 							</li>
+							<li class="list-type-option" @click="handleClick('three')">
+								<i class="el_icon_select" :class="{ contact: activeName!=='three', contact2: activeName==='three' }"></i>
+							</li>
 						</ul>
 						<div v-show="activeName==='first'">
 							<el-menu
@@ -68,11 +71,36 @@
 									<template slot="title" class="contact-slice">{{item.slice}}</template>
 									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
 										<div class="option-l">
-											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl"></el-avatar>
+											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+												<img :src="squareUrl"/>
+											</el-avatar>
 										</div>
 										<div class="option-r">
 											<div class="option-line">
 												<div class="dialog-title">{{info.uName}}</div>
+											</div>
+										</div>
+									</el-menu-item>
+								</el-menu-item-group>
+							</el-menu>
+						</div>
+						<div v-show="activeName==='three'">
+							<el-menu
+								background-color="#292c33"
+								text-color="#fff"
+								default-active="0"
+								active-text-color="#FFF">
+								<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
+									<template slot="title" class="contact-slice">{{item.slice}}</template>
+									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
+										<div class="option-l">
+											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+												<img :src="squareUrl"/>
+											</el-avatar>
+										</div>
+										<div class="option-r">
+											<div class="option-line">
+												<div class="dialog-title">{{info.title}}</div>
 											</div>
 										</div>
 									</el-menu-item>
@@ -90,9 +118,14 @@
 							</div>
 						</div>
 						<div v-else class="chat-box">
-							<div class="contact-header">
+							<div class="contact-header" v-if="Talkinfo.type==='friends'">
 								<div>{{Talkinfo.uName}}</div>
 							</div>
+							<header class="chat-header j-chat-header" v-else-if="Talkinfo.type==='groups'" @click="showmember">
+								<div class="dialog-title">{{Talkinfo.uName}}</div>
+								<div class="dialog-extend">({{Talkinfo.member.length}})</div>
+								<i class="member-status down"></i>
+							</header>
 							<div class="chat-body">
 								<div class="message-list-scroll">
 									<div class="chat-tips">
@@ -179,6 +212,18 @@
 									</div>
 								</div>
 							</div>
+							<div class="mc" v-show="show_member" @click="showmember"></div>
+							<div class="member-info" v-show="show_member" v-if="Talkinfo.type==='groups'">
+								<div class="scroll-content">
+									<div class="member-list">
+										<div style="height: 100px;position: absolute;width: 100%;" v-show="show_Card" @click="showCard"></div>
+										<div class="member" v-for="(item, index) in Talkinfo.member" :key="index" @click="showCard1">
+											<el-avatar shape="square" :size="55" :src="item.squareUrl" class="user-avatar-second"></el-avatar>
+											<p>{{item.name}}</p>
+										</div>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 					<div class="main-inner-r" v-show="activeName==='second'">
@@ -187,16 +232,48 @@
 								<div>查看详情</div>
 							</div>
 							<div class="contact-body">
-								<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second"></el-avatar>
+								<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second">
+									<img :src="squareUrl"/>
+								</el-avatar>
 								<div class="contact-name" v-show="Friendinfo.uName">
 									<p>{{Friendinfo.uName}}</p>
-									<i class="app-icon-bag i-man"></i>
+									<i class="app-icon-bag i-man" v-if="Friendinfo.sex==1"></i>
+									<i class="app-icon-bag i-girl" v-else-if="Friendinfo.sex==2"></i>
 								</div>
 								<el-button type="primary" class="btn-success" v-show="Friendinfo.uName" @click="createMsg">发送消息</el-button>
 							</div>
 						</div>
 					</div>
+					<div class="main-inner-r" v-show="activeName==='three'">
+						<div class="contact-info">
+							<div class="contact-header">
+								<div>查看详情</div>
+							</div>
+							<div class="contact-body">
+								<el-avatar shape="square" :size="100" :src="Groupinfo.squareUrl" class="user-avatar-second">
+									<img :src="squareUrl"/>
+								</el-avatar>
+								<div class="contact-name" v-show="Groupinfo.title">
+									<p>{{Groupinfo.title}}</p>
+								</div>
+								<el-button type="primary" class="btn-success" v-show="Groupinfo.title" @click="createMsg">发送消息</el-button>
+							</div>
+						</div>
+					</div>
 				</el-main>
+				<div class="user-card" v-show="show_Card" v-if="Talkinfo.type==='groups'" :style="{top: screenY+'px',left: screenX+'px'}">
+					<div class="card-content">
+						<div class="card-h">
+							<el-avatar shape="square" :size="220" :src="squareUrl"></el-avatar>
+						</div>
+						<div class="card-b">
+							<div class="name-area">
+								<i class="app-icon-bag i-chat action"></i>
+								<p class="nickname">bhjb</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</el-container>
 		</el-scrollbar>
 	</div>
@@ -210,7 +287,7 @@ export default {
 	},
 	data() {
 		return {
-			squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+			squareUrl: require('../assets/defaultUser.png'),
 			userName: '白犀牛',
 			input: '',
 			activeName: 'first',
@@ -236,25 +313,47 @@ export default {
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
 							msgType: 3
 						}
+					],
+					type: 'friends'
+				},
+				{
+					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+					uName: '测试',
+					lastTime: '16:33',
+					lastText: '111',
+					newCount: 0,
+					list: [
+						{
+							time: '09:41',
+							msgType: 1
+						},
+						{
+							msg: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							msgType: 2
+						},
+						{
+							msg: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+							msgType: 3
+						}
+					],
+					type: 'groups',
+					member: [
+						{
+							name: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
+						},
+						{
+							name: 'emmms',
+							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
+						}
 					]
 				}
 			],
 			Talkinfo: {},
 			selectIndex: '',
 			FriendList: [
-				{
-					slice: 'B',
-					info: [
-						{
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							uName: '白犀牛'
-						},
-						{
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							uName: '白犀牛'
-						}
-					]
-				},
 				{
 					slice: 'c',
 					info: [
@@ -265,10 +364,11 @@ export default {
 					]
 				}
 			],
+			GroupList: [],
 			selectFriend: '',
-			Friendinfo: {
-				squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
-			},
+			selectGroup: '',
+			Friendinfo: {},
+			Groupinfo: {},
 			textarea: '',
 			empticon: [],
 			show_panel: false,
@@ -278,7 +378,15 @@ export default {
 				modules: {
 					toolbar: {}
 				}
-			}
+			},
+			websock: null,
+			uName: '18308465172',
+			uPass: 'w13540010',
+			SocketUrl: 'ws://192.168.0.188:8500',
+			show_member: false,
+			show_Card: false,
+			screenX: 0,
+			screenY: 0
 		}
 	},
 	methods: {
@@ -293,8 +401,24 @@ export default {
 			this.selectFriend = listindex + '-' + index
 			this.Friendinfo = this.FriendList[listindex].info[index]
 		},
+		GroupClick(listindex, index) {
+			this.selectGroup = listindex + '-' + index
+			this.Groupinfo = this.GroupList[listindex].info[index]
+		},
 		showPanel() {
 			this.show_panel = !this.show_panel
+		},
+		showmember() {
+			this.show_member = !this.show_member
+			this.show_Card = false
+		},
+		showCard() {
+			this.show_Card = !this.show_Card
+		},
+		showCard1(e) {
+			this.screenX = e.x
+			this.screenY = e.y
+			this.show_Card = true
 		},
 		checkEmoji(e) {
 			console.log(e)
@@ -316,7 +440,65 @@ export default {
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
+		},
+		initWebSocket() { /*初始化weosocket*/
+			this.websock = new WebSocket(this.SocketUrl)
+			this.websock.onopen = this.websocketonopen
+
+			this.websock.onerror = this.websocketonerror
+
+			this.websock.onmessage = this.websocketonmessage
+			this.websock.onclose = this.websocketclose
+		},
+
+		websocketonopen() {
+			console.log('WebSocket连接成功')
+		},
+		websocketonerror(e) { //错误
+			console.log('WebSocket连接发生错误')
+		},
+		websocketonmessage(e) { //数据接收
+			const msg = JSON.parse(e.data)
+			var sender/*, userName, nameList, changeType*/
+			console.log(msg)
+			const _this = this
+			switch (msg.type) {
+			case 'system':
+				sender = '系统消息: '
+				break
+			case 'user':
+				sender = msg.from + ': '
+				break
+			case 'handshake':
+				const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
+				_this.websocketsend(userInfo)
+				return
+			case 'login':
+				_this.FriendList = msg.user_list.friends
+				_this.GroupList = msg.user_list.groups
+				return
+			case 'logout':
+				/*userName = msg.content
+				nameList = msg.user_list
+				changeType = msg.type
+				dealUser(userName, changeType, nameList)*/
+				return
+			}
+			console.log(sender + msg.content)
+		},
+
+		websocketsend(agentData) { //数据发送
+			const Jdata = JSON.stringify(agentData)
+			this.websock.send(Jdata)
+		},
+
+		websocketclose(e) { //关闭
+			console.log('connection closed ', e)
 		}
+	},
+	destroyed() {
+		//页面销毁时关闭长连接
+		this.websocketclose()
 	},
 	mounted() {
 		const file = require.context('../assets/empticon/', false, /.png$/).keys()
@@ -327,6 +509,7 @@ export default {
 		}, {}))
 		console.log(array)
 		this.empticon = array
+		this.initWebSocket()
 	}
 }
 </script>
@@ -409,6 +592,11 @@ export default {
 							height: 18px;
 							width: 18px;
 							background-image: url("../assets/i_man.png");
+						}
+						.i-girl{
+							height: 18px;
+							width: 18px;
+							background-image: url("../assets/i_girl.png");
 						}
 					}
 					.btn-success{
@@ -754,6 +942,41 @@ export default {
 		cursor: pointer;
 		display: flex;
 	}
+	.chat-header {
+		order: 1;
+		flex: none;
+		box-sizing: border-box;
+		justify-content: center;
+		align-content: center;
+		align-items: center;
+		height: 50px;
+		padding: 10px 15px;
+		font-size: 16px;
+		line-height: 1.2;
+		border-bottom: 1px solid #d6d6d6;
+		cursor: pointer;
+		display: flex;
+		background-color: #eee;
+		.dialog-title {
+			max-width: 250px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.down {
+			bottom: 1px;
+			-webkit-transform: rotate(45deg);
+			transform: rotate(45deg);
+			position: relative;
+			display: inline-block;
+			vertical-align: middle;
+			height: 5px;
+			width: 5px;
+			margin-left: 5px;
+			border-bottom: 2px solid #888;
+			border-right: 2px solid #888;
+		}
+	}
 	.inner-l-header{
 		flex: none;
 		box-sizing: border-box;
@@ -1018,7 +1241,97 @@ export default {
 	/deep/ .ql-tooltip{
 		display: none;
 	}
-
+	.member-info {
+		position: absolute!important;
+		left: 0;
+		right: 0;
+		top: 50px;
+		background-color: #eee;
+		border-bottom: 1px solid #d6d6d6;
+		z-index: 1000;
+		:before {
+			content: " ";
+			display: table;
+		}
+		:after {
+			clear: both;
+			content: " ";
+			display: table;
+		}
+		.scroll-content::-webkit-scrollbar{
+			width:6px;
+			height: 8px;
+		}
+		.scroll-content::-webkit-scrollbar-thumb{
+			background-color:rgba(0,0,0,.4);
+		}
+		.scroll-content {
+			max-height: 290px;
+			overflow-x: hidden;
+			overflow-y: scroll;
+			.member, .memberedit {
+				position: relative;
+				float: left;
+				padding-top: 10px;
+				height: 85px;
+				width: 64px;
+				margin-left: 7px;
+				margin-right: 6px;
+				text-align: center;
+				z-index: 1002;
+				img {
+					height: 55px;
+					width: 55px;
+					border-radius: 4px;
+					overflow: hidden;
+					cursor: pointer;
+				}
+				p {
+					font-size: 14px;
+					line-height: 30px;
+					min-height: 30px;
+					width: 72px;
+					text-align: center;
+					margin-left: -4px;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+			}
+		}
+	}
+	.user-card {
+		position: absolute;
+		background-color: #fff;
+		border-radius: 4px;
+		overflow: hidden;
+		z-index: 20;
+		z-index: 1000;
+		.card-b {
+			padding: 20px;
+			.name-area {
+				margin-bottom: 8px;
+				.action {
+					float: right;
+				}
+				.i-chat {
+					width: 22px;
+					height: 20px;
+					background-image: url('../assets/chat.png');
+				}
+				.nickname {
+					display: inline-block;
+					max-width: 110px;
+					font-size: 18px;
+					vertical-align: middle;
+					user-select: text;
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;
+				}
+			}
+		}
+	}
 	@media screen and (max-width: 1000px) and (min-width: 900px) {
 		.app_main {
 			height: 100% !important;
