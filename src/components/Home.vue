@@ -5,10 +5,10 @@
 				<div class="main-inner-l">
 					<div class="inner-l-header">
 						<div class="user-info">
-							<el-avatar class="user-avatar-pic" shape="square" :size="42" :src="squareUrl"></el-avatar>
+							<el-avatar class="user-avatar-pic" shape="square" :size="42" :src="meUrl"></el-avatar>
 							<span class="user-name">{{userName}}</span>
 						</div>
-						<el-dropdown trigger="click">
+						<el-dropdown trigger="click" @command="closesocket">
 							<span class="el-dropdown-link">
 								<i class="i_menu"></i>
 							</span>
@@ -40,7 +40,9 @@
 							active-text-color="#FFF" v-show="TalkList.length>0">
 								<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
 									<div class="option-l">
-										<el-avatar shape="square" :size="42" :src="item.squareUrl"></el-avatar>
+										<el-avatar shape="square" :size="42" :src="item.squareUrl">
+											<img :src="squareUrl"/>
+										</el-avatar>
 									</div>
 									<div class="option-r">
 										<div class="option-line">
@@ -118,14 +120,17 @@
 							</div>
 						</div>
 						<div v-else class="chat-box">
-							<div class="contact-header" v-if="Talkinfo.type==='friends'">
+							<div class="contact-header">
+								<div>{{Talkinfo.uName}}</div>
+							</div>
+							<!--<div class="contact-header" v-if="Talkinfo.type==='friends'">
 								<div>{{Talkinfo.uName}}</div>
 							</div>
 							<header class="chat-header j-chat-header" v-else-if="Talkinfo.type==='groups'" @click="showmember">
 								<div class="dialog-title">{{Talkinfo.uName}}</div>
 								<div class="dialog-extend">({{Talkinfo.member.length}})</div>
 								<i class="member-status down"></i>
-							</header>
+							</header>-->
 							<div class="chat-body">
 								<div class="message-list-scroll">
 									<div class="chat-tips">
@@ -144,23 +149,27 @@
 												<div class="message-detail-b">
 													<div class="message-main j-message-main">
 														<div class="message-info blue">
-															<div class="message-info-text"><span>{{item.msg}}</span></div>
+															<div class="message-info-text"><span v-html="item.msg"></span></div>
 														</div>
 														<div class="message-status"></div>
 													</div>
 												</div>
 												<div class="message-detail-s">
-													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar"></el-avatar>
+													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+														<img :src="squareUrl"/>
+													</el-avatar>
 												</div>
 											</div>
-											<div data-index="1" class="msg j-msg msg-chat" v-else-if="item.msgType===3">
+											<div :data-index="item.msgType" class="msg j-msg msg-chat" v-else-if="item.msgType===3">
 												<div class="message-detail-s">
-													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar"></el-avatar>
+													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+														<img :src="squareUrl"/>
+													</el-avatar>
 												</div>
 												<div class="message-detail-b">
 													<div class="message-main j-message-main">
 														<div class="message-info">
-															<div class="message-info-text"><span>{{item.msg}}</span></div>
+															<div class="message-info-text"><span v-html="item.msg"></span></div>
 														</div>
 														<div class="message-status"></div>
 													</div>
@@ -208,12 +217,12 @@
 									</div>
 									<div class="button-control">
 										<div class="btn-label">按下Shift+Enter换行</div>
-										<el-button>发送</el-button>
+										<el-button @click="sendMsg">发送</el-button>
 									</div>
 								</div>
 							</div>
-							<div class="mc" v-show="show_member" @click="showmember"></div>
-							<div class="member-info" v-show="show_member" v-if="Talkinfo.type==='groups'">
+							<!--<div class="mc" v-show="show_member" @click="showmember"></div>
+							<div class="member-info" v-show="show_member" v-if="Talkinfo.type==='groups' && Talkinfo.member.length>0">
 								<div class="scroll-content">
 									<div class="member-list">
 										<div style="height: 100px;position: absolute;width: 100%;" v-show="show_Card" @click="showCard"></div>
@@ -223,7 +232,7 @@
 										</div>
 									</div>
 								</div>
-							</div>
+							</div>-->
 						</div>
 					</div>
 					<div class="main-inner-r" v-show="activeName==='second'">
@@ -253,10 +262,10 @@
 								<el-avatar shape="square" :size="100" :src="Groupinfo.squareUrl" class="user-avatar-second">
 									<img :src="squareUrl"/>
 								</el-avatar>
-								<div class="contact-name" v-show="Groupinfo.title">
-									<p>{{Groupinfo.title}}</p>
+								<div class="contact-name" v-show="Groupinfo.uName">
+									<p>{{Groupinfo.uName}}</p>
 								</div>
-								<el-button type="primary" class="btn-success" v-show="Groupinfo.title" @click="createMsg">发送消息</el-button>
+								<el-button type="primary" class="btn-success" v-show="Groupinfo.uName" @click="createMsg('three')">发送消息</el-button>
 							</div>
 						</div>
 					</div>
@@ -288,6 +297,7 @@ export default {
 	data() {
 		return {
 			squareUrl: require('../assets/defaultUser.png'),
+			meUrl: require('../assets/defaultUser.png'),
 			userName: '白犀牛',
 			input: '',
 			activeName: 'first',
@@ -353,7 +363,8 @@ export default {
 			],
 			Talkinfo: {},
 			selectIndex: '',
-			FriendList: [
+			FriendList: /*数组字段py 拼音 uName 名称 squareUrl 头像 sex性别 uid发送消息id */
+			[
 				{
 					slice: 'c',
 					info: [
@@ -382,7 +393,8 @@ export default {
 			websock: null,
 			uName: '18308465172',
 			uPass: 'w13540010',
-			SocketUrl: 'ws://192.168.0.188:8500',
+			// SocketUrl: 'ws://192.168.0.188:8500',
+			SocketUrl: 'ws://192.168.0.106:8500',
 			show_member: false,
 			show_Card: false,
 			screenX: 0,
@@ -422,9 +434,8 @@ export default {
 		},
 		checkEmoji(e) {
 			console.log(e)
-			let textarea = this.textarea
-			textarea = textarea + '<img src="' + e + '" class="input-emo">'
-			// textarea = textarea + '<br/>'
+			let textarea = this.$refs.editor.getHtml()
+			textarea = textarea + "<img src='" + e + "' class='input-emo'>"
 			console.log(textarea)
 			this.textarea = textarea
 			this.init()
@@ -432,11 +443,36 @@ export default {
 		init() {
 			this.$refs.editor.setHtml(this.textarea)
 		},
-		save() {
-			this.textarea = this.$refs.editor.getHtml()
-			console.log(this.textarea)
+		sendMsg() {
+			const userInfo = {'type': 'send_msg', 'content': {'phone': this.uName, 'pass': this.uPass, 'uid': this.Talkinfo.uid, 'msg': this.$refs.editor.getHtml()}}
+			console.log(userInfo)
+			this.websocketsend(userInfo)
+			this.textarea = ''
+			this.init()
 		},
-		createMsg() {
+		createMsg(e) {
+			let info = {}
+			let type = ''
+			if (e === 'three') {
+				info = this.Groupinfo
+				type = 'friends'
+			} else {
+				info = this.Friendinfo
+				type = 'groups'
+			}
+			const Talk = [
+				{
+					squareUrl: info.squareUrl,
+					uName: info.uName,
+					lastTime: '',
+					lastText: '',
+					uid: info.uid,
+					newCount: 0,
+					list: [],
+					type: type
+				}
+			]
+			this.TalkList = Talk
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
@@ -466,8 +502,9 @@ export default {
 			case 'system':
 				sender = '系统消息: '
 				break
-			case 'user':
-				sender = msg.from + ': '
+			case 'push_msg':
+				_this.Talkinfo = msg.msg_content
+				console.log(1, _this.Talkinfo.list)
 				break
 			case 'handshake':
 				const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
@@ -476,6 +513,14 @@ export default {
 			case 'login':
 				_this.FriendList = msg.user_list.friends
 				_this.GroupList = msg.user_list.groups
+				return
+			case 'send_msg':
+				console.log(msg.msg_info.state)
+				if (msg.msg_info.state === 1) {
+					console.log(_this.Talkinfo.list)
+					_this.Talkinfo.list.push({msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2})
+					console.log(_this.Talkinfo.list)
+				}
 				return
 			case 'logout':
 				/*userName = msg.content
@@ -489,11 +534,17 @@ export default {
 
 		websocketsend(agentData) { //数据发送
 			const Jdata = JSON.stringify(agentData)
+			console.log(Jdata)
 			this.websock.send(Jdata)
 		},
 
 		websocketclose(e) { //关闭
 			console.log('connection closed ', e)
+		},
+		closesocket() {
+			console.log(11)
+			const userInfo = {'type': 'logout', 'content': {}}
+			this.websocketsend(userInfo)
 		}
 	},
 	destroyed() {
@@ -616,12 +667,19 @@ export default {
 				.chat-box{
 					flex-direction: column;
 					overflow: hidden;
+					.chat-body::-webkit-scrollbar{
+						width:6px;
+						height: 8px;
+					}
+					.chat-body::-webkit-scrollbar-thumb{
+						background-color:rgba(0,0,0,.6);
+					}
 					.chat-body {
 						order: 2;
 						flex: 1 1 auto;
 						min-height: 0;
 						position: relative;
-						overflow: hidden;
+						overflow-y: scroll;
 						width: 100%;
 						.message-list-scroll {
 							padding-top: 6px;
@@ -690,6 +748,7 @@ export default {
 							.msg-chat {
 								padding: 0 20px;
 								display: flex;
+								align-items: flex-start;
 								.message-detail-b {
 									margin: 0 16px;
 									max-width: 65%;
@@ -725,6 +784,7 @@ export default {
 												padding: 9px 15px;
 												font-size: 14px;
 												line-height: 20px;
+												word-break: break-all;
 											}
 										}
 										.message-info.blue {
@@ -1370,6 +1430,11 @@ export default {
 	@media screen and (max-height: 841px) and (min-height: 690px) {
 		.app_main {
 			height: 690px;
+		}
+	}
+	@media screen and (min-height: 841px) {
+		.app_main {
+			height: 82%;
 		}
 	}
 </style>

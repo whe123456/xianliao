@@ -64,8 +64,10 @@ export default {
 	}
 	/deep/ .w-e-text{
 		padding: 0;
+		display: flex;
 	}
 	/deep/ .w-e-text p{
+		word-break: break-all;
 		margin: 0;
 	}
 </style>
