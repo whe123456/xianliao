@@ -13,13 +13,13 @@
 								<i class="i_menu"></i>
 							</span>
 							<el-dropdown-menu slot="dropdown">
-								<el-dropdown-item><i class="el_icon-bell"></i>关闭桌面通知</el-dropdown-item>
+								<!--<el-dropdown-item><i class="el_icon-bell"></i>关闭桌面通知</el-dropdown-item>-->
 								<el-dropdown-item><i class="el_icon-button"></i>退出</el-dropdown-item>
 							</el-dropdown-menu>
 						</el-dropdown>
 					</div>
 					<div class="inner-l-body">
-						<el-input v-model="input" placeholder="搜索" class="m-search"></el-input>
+						<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="uName" @select="handleSelect"></el-autocomplete>
 						<ul class="list-type-nav">
 							<li class="list-type-option" @click="handleClick('first')">
 								<i class="el_icon_select" :class="{ session: activeName!=='first', session2: activeName==='first' }"></i>
@@ -102,7 +102,7 @@
 										</div>
 										<div class="option-r">
 											<div class="option-line">
-												<div class="dialog-title">{{info.title}}</div>
+												<div class="dialog-title">{{info.uName}}</div>
 											</div>
 										</div>
 									</el-menu-item>
@@ -302,7 +302,7 @@ export default {
 			input: '',
 			activeName: 'first',
 			TalkList: [
-				{
+				/*{
 					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
 					uName: '白犀牛',
 					lastTime: '16:33',
@@ -359,21 +359,22 @@ export default {
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
 						}
 					]
-				}
+				}*/
 			],
 			Talkinfo: {},
 			selectIndex: '',
 			FriendList: /*数组字段py 拼音 uName 名称 squareUrl 头像 sex性别 uid发送消息id */
 			[
-				{
+				/*{
 					slice: 'c',
 					info: [
 						{
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							uName: 'c犀牛'
+							uName: 'c犀牛',
+							uid: 11031
 						}
 					]
-				}
+				}*/
 			],
 			GroupList: [],
 			selectFriend: '',
@@ -391,10 +392,9 @@ export default {
 				}
 			},
 			websock: null,
-			uName: '18308465172',
-			uPass: 'w13540010',
-			// SocketUrl: 'ws://192.168.0.188:8500',
-			SocketUrl: 'ws://192.168.0.106:8500',
+			uName: '',
+			uPass: '',
+			SocketUrl: '',
 			show_member: false,
 			show_Card: false,
 			screenX: 0,
@@ -460,7 +460,7 @@ export default {
 				info = this.Friendinfo
 				type = 'groups'
 			}
-			const Talk = [
+			const Talk =
 				{
 					squareUrl: info.squareUrl,
 					uName: info.uName,
@@ -471,14 +471,29 @@ export default {
 					list: [],
 					type: type
 				}
-			]
-			this.TalkList = Talk
+			this.selectTalk(Talk)
+		},
+		selectTalk(data) {
+			const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
+			if (~findIndex) {
+				let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+				console.log('list', TheFind[0].list)
+				TheFind[0].list = TheFind[0].list.concat(data.list)
+				console.log('list', TheFind[0].list)
+				this.TalkList.splice(findIndex, 1)
+				this.TalkList = TheFind.concat(this.TalkList)
+			} else {
+				const Talk = [data]
+				this.TalkList = Talk.concat(this.TalkList)
+			}
+			console.log(this.TalkList)
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
 		},
 		initWebSocket() { /*初始化weosocket*/
 			this.websock = new WebSocket(this.SocketUrl)
+			console.log(this.websock)
 			this.websock.onopen = this.websocketonopen
 
 			this.websock.onerror = this.websocketonerror
@@ -486,7 +501,6 @@ export default {
 			this.websock.onmessage = this.websocketonmessage
 			this.websock.onclose = this.websocketclose
 		},
-
 		websocketonopen() {
 			console.log('WebSocket连接成功')
 		},
@@ -503,8 +517,7 @@ export default {
 				sender = '系统消息: '
 				break
 			case 'push_msg':
-				_this.Talkinfo = msg.msg_content
-				console.log(1, _this.Talkinfo.list)
+				_this.selectTalk(msg.msg_content)
 				break
 			case 'handshake':
 				const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
@@ -515,11 +528,17 @@ export default {
 				_this.GroupList = msg.user_list.groups
 				return
 			case 'send_msg':
-				console.log(msg.msg_info.state)
 				if (msg.msg_info.state === 1) {
-					console.log(_this.Talkinfo.list)
-					_this.Talkinfo.list.push({msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2})
-					console.log(_this.Talkinfo.list)
+					_this.selectTalk({
+						squareUrl: '',
+						uName: '',
+						lastTime: '',
+						lastText: '',
+						uid: msg.msg_info.push_uid,
+						newCount: 0,
+						list: [{msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2}],
+						type: 'friends'
+					})
 				}
 				return
 			case 'logout':
@@ -531,20 +550,64 @@ export default {
 			}
 			console.log(sender + msg.content)
 		},
-
 		websocketsend(agentData) { //数据发送
 			const Jdata = JSON.stringify(agentData)
 			console.log(Jdata)
 			this.websock.send(Jdata)
 		},
-
 		websocketclose(e) { //关闭
 			console.log('connection closed ', e)
+			sessionStorage.clear()
+			this.$router.push('/Login')
 		},
 		closesocket() {
 			console.log(11)
 			const userInfo = {'type': 'logout', 'content': {}}
 			this.websocketsend(userInfo)
+		},
+		querySearch(queryString, cb) {
+			// 调用 callback 返回建议列表的数据
+			let data = []
+			switch (this.activeName) {
+			case 'first':
+				data = this.TalkList.filter((value) => {
+					return value.uName.includes(queryString)
+				})
+				break
+			case 'second':
+				let info = this.FriendList.map((value) => {
+					return value.info
+				})
+				data = info.reduce((a, b) => { return a.concat(b) })
+				data = data.filter((value) => {
+					return value.uName.includes(queryString)
+				})
+				break
+			case 'three':
+				let tinfo = this.GroupList.map((value) => {
+					return value.info
+				})
+				data = tinfo.reduce((a, b) => { return a.concat(b) })
+				data = data.filter((value) => {
+					return value.uName.includes(queryString)
+				})
+				break
+			}
+			cb(data)
+		},
+		handleSelect(item) {
+			switch (this.activeName) {
+			case 'first':
+				this.selectTalk(item)
+				break
+			case 'second':
+				// this.FriendClick(listindex,index)
+				this.Friendinfo = item
+				break
+			case 'three':
+				this.Groupinfo = item
+				break
+			}
 		}
 	},
 	destroyed() {
@@ -552,6 +615,15 @@ export default {
 		this.websocketclose()
 	},
 	mounted() {
+		const uName = sessionStorage.getItem('uName')
+		const uPass = sessionStorage.getItem('uPass')
+		if (uName === null || uPass === null) {
+			this.$router.push('/Login')
+			return false
+		}
+		this.uName = uName
+		this.uPass = uPass
+		this.SocketUrl = sessionStorage.getItem('url')
 		const file = require.context('../assets/empticon/', false, /.png$/).keys()
 		var array = Object.values(file.reduce((res, item, index) => {
 			const src = require('../assets/empticon/' + item.substring(2))

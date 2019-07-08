@@ -7,6 +7,9 @@ import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import Vuex from 'vuex'
 import './styles/global.scss'
+// WebSocket封装方法
+import * as socketApi from './util/socket'
+Vue.prototype.socketApi = socketApi
 Vue.config.productionTip = false
 Vue.use(Vuex)
 Vue.use(ElementUI)
