@@ -398,7 +398,8 @@ export default {
 			show_member: false,
 			show_Card: false,
 			screenX: 0,
-			screenY: 0
+			screenY: 0,
+			mUid: ''
 		}
 	},
 	methods: {
@@ -407,6 +408,7 @@ export default {
 		},
 		talkClick(e) {
 			this.selectIndex = e
+			this.TalkList[e].newCount = 0
 			this.Talkinfo = this.TalkList[e]
 		},
 		FriendClick(listindex, index) {
@@ -444,10 +446,11 @@ export default {
 			this.$refs.editor.setHtml(this.textarea)
 		},
 		sendMsg() {
-			const userInfo = {'type': 'send_msg', 'content': {'phone': this.uName, 'pass': this.uPass, 'uid': this.Talkinfo.uid, 'msg': this.$refs.editor.getHtml()}}
+			const userInfo = {'type': 'send_msg', 'content': {'phone': this.uName, 'pass': this.uPass, 'userUrl': this.squareUrl, 'userName': this.userName, 'mUid': this.mUid, 'uid': this.Talkinfo.uid, 'msg': this.$refs.editor.getHtml()}}
 			console.log(userInfo)
-			this.websocketsend(userInfo)
+			this.socketApi.sendSock(userInfo, this.websocketonmessage)
 			this.textarea = ''
+			this.TalkList[0].newCount = 0
 			this.init()
 		},
 		createMsg(e) {
@@ -492,23 +495,9 @@ export default {
 			this.activeName = 'first'
 		},
 		initWebSocket() { /*初始化weosocket*/
-			this.websock = new WebSocket(this.SocketUrl)
-			console.log(this.websock)
-			this.websock.onopen = this.websocketonopen
-
-			this.websock.onerror = this.websocketonerror
-
-			this.websock.onmessage = this.websocketonmessage
-			this.websock.onclose = this.websocketclose
+			this.socketApi.sendSock({'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
 		},
-		websocketonopen() {
-			console.log('WebSocket连接成功')
-		},
-		websocketonerror(e) { //错误
-			console.log('WebSocket连接发生错误')
-		},
-		websocketonmessage(e) { //数据接收
-			const msg = JSON.parse(e.data)
+		websocketonmessage(msg) { //数据接收
 			var sender/*, userName, nameList, changeType*/
 			console.log(msg)
 			const _this = this
@@ -519,13 +508,10 @@ export default {
 			case 'push_msg':
 				_this.selectTalk(msg.msg_content)
 				break
-			case 'handshake':
-				const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
-				_this.websocketsend(userInfo)
-				return
 			case 'login':
 				_this.FriendList = msg.user_list.friends
 				_this.GroupList = msg.user_list.groups
+				_this.mUid = msg.user_list.userid
 				return
 			case 'send_msg':
 				if (msg.msg_info.state === 1) {
@@ -542,18 +528,10 @@ export default {
 				}
 				return
 			case 'logout':
-				/*userName = msg.content
-				nameList = msg.user_list
-				changeType = msg.type
-				dealUser(userName, changeType, nameList)*/
+				_this.websocketclose()
 				return
 			}
 			console.log(sender + msg.content)
-		},
-		websocketsend(agentData) { //数据发送
-			const Jdata = JSON.stringify(agentData)
-			console.log(Jdata)
-			this.websock.send(Jdata)
 		},
 		websocketclose(e) { //关闭
 			console.log('connection closed ', e)
@@ -563,7 +541,7 @@ export default {
 		closesocket() {
 			console.log(11)
 			const userInfo = {'type': 'logout', 'content': {}}
-			this.websocketsend(userInfo)
+			this.socketApi.sendSock(userInfo, this.websocketonmessage)
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据

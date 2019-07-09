@@ -1,5 +1,6 @@
+import vm from '@/main'
 var websock = null
-// var globalCallback = null
+var globalCallback = null
 
 // 初始化weosocket
 function initWebSocket() {
@@ -23,7 +24,7 @@ function initWebSocket() {
 
 // 实际调用的方法
 function sendSock(agentData, callback) {
-	// globalCallback = callback
+	globalCallback = callback
 	if (websock.readyState === websock.OPEN) {
 		// 若是ws开启状态
 		websocketsend(agentData)
@@ -35,6 +36,7 @@ function sendSock(agentData, callback) {
 	} else {
 		// 若未开启 ，则等待1s后重新调用
 		setTimeout(function() {
+			initWebSocket()
 			sendSock(agentData, callback)
 		}, 1000)
 	}
@@ -43,7 +45,12 @@ function sendSock(agentData, callback) {
 // 数据接收
 function websocketonmessage(e) { //数据接收
 	const msg = JSON.parse(e.data)
-	var sender/*, userName, nameList, changeType*/
+	console.log(msg)
+	if (globalCallback === null) {
+		return
+	}
+	globalCallback(msg)
+	/*var sender/!*, userName, nameList, changeType*!/
 	console.log(msg)
 	const _this = this
 	switch (msg.type) {
@@ -54,8 +61,8 @@ function websocketonmessage(e) { //数据接收
 		_this.selectTalk(msg.msg_content)
 		break
 	case 'handshake':
-		const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
-		_this.websocketsend(userInfo)
+		/!*const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
+		_this.websocketsend(userInfo)*!/
 		return
 	case 'login':
 		_this.FriendList = msg.user_list.friends
@@ -76,13 +83,13 @@ function websocketonmessage(e) { //数据接收
 		}
 		return
 	case 'logout':
-		/*userName = msg.content
+		/!*userName = msg.content
 		nameList = msg.user_list
 		changeType = msg.type
-		dealUser(userName, changeType, nameList)*/
+		dealUser(userName, changeType, nameList)*!/
 		return
 	}
-	console.log(sender + msg.content)
+	console.log(sender + msg.content)*/
 }
 
 // 数据发送
@@ -92,9 +99,8 @@ function websocketsend(agentData) {
 
 // 关闭
 function websocketclose(e) {
-	const userInfo = {'type': 'logout', 'content': {}}
-	websocketsend(userInfo)
-	console.log('connection closed (' + e.code + ')')
+	sessionStorage.clear()
+	vm.$router.push('/Login')
 }
 
 // 创建 websocket 连接

@@ -14,9 +14,10 @@ Vue.config.productionTip = false
 Vue.use(Vuex)
 Vue.use(ElementUI)
 /* eslint-disable no-new */
-new Vue({
+const vm = new Vue({
 	el: '#app',
 	router,
 	components: { App },
 	template: '<App/>'
 })
+export default vm

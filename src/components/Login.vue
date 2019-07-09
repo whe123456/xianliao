@@ -1,7 +1,7 @@
 <template>
     <div class="login-wrap">
         <div class="ms-title">闲聊登录</div>
-        <div class="ms-login">
+        <div class="ms-login" v-loading="loading">
             <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px" class="demo-ruleForm">
                 <el-form-item prop="username">
                     <el-input v-model="ruleForm.username" placeholder="用户名"></el-input>
@@ -32,26 +32,27 @@ export default {
 				password: [
 					{ required: true, message: '请输入密码', trigger: 'blur' }
 				]
-			}
+			},
+			loading: false
 		}
 	},
 	methods: {
 		getConfigResult(res) {
 			// 接收回调函数返回数据的方法
 			console.log(res)
-		},
-		websocketToLogin() {
-			// 【agentData：发送的参数；this.getConfigResult：回调方法】
-			// this.socketApi.sendSock(getPlaceRevenue, this.getConfigResult)
+			if (res.type === 'login') {
+				this.loading = false
+				this.$router.push('/')
+			}
 		},
 		submitForm(formName) {
 			const self = this
+			this.loading = true
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
-					sessionStorage.setItem('url', 'ws://192.168.0.188:8500')
+					self.socketApi.sendSock({'type': 'login', 'content': {'phone': self.ruleForm.username, 'pass': self.ruleForm.password}}, self.getConfigResult)
 					sessionStorage.setItem('uName', self.ruleForm.username) //18308465172
 					sessionStorage.setItem('uPass', self.ruleForm.password) //w13540010
-					self.$router.push('/')
 				} else {
 					console.log('error submit!!')
 					return false
