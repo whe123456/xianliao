@@ -498,13 +498,9 @@ export default {
 			this.socketApi.sendSock({'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
 		},
 		websocketonmessage(msg) { //数据接收
-			var sender/*, userName, nameList, changeType*/
 			console.log(msg)
 			const _this = this
 			switch (msg.type) {
-			case 'system':
-				sender = '系统消息: '
-				break
 			case 'push_msg':
 				_this.selectTalk(msg.msg_content)
 				break
@@ -512,7 +508,7 @@ export default {
 				_this.FriendList = msg.user_list.friends
 				_this.GroupList = msg.user_list.groups
 				_this.mUid = msg.user_list.userid
-				return
+				break
 			case 'send_msg':
 				if (msg.msg_info.state === 1) {
 					_this.selectTalk({
@@ -526,12 +522,11 @@ export default {
 						type: 'friends'
 					})
 				}
-				return
+				break
 			case 'logout':
 				_this.websocketclose()
-				return
+				break
 			}
-			console.log(sender + msg.content)
 		},
 		websocketclose(e) { //关闭
 			console.log('connection closed ', e)
