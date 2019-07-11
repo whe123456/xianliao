@@ -587,6 +587,20 @@ export default {
 		this.websocketclose()
 	},
 	mounted() {
+		const _this = this
+		window.onbeforeunload = function(e) {
+			if (_this.$route.fullPath === '/') {
+				e = e || window.event
+				// 兼容IE8和Firefox 4之前的版本
+				if (e) {
+					e.returnValue = '关闭提示'
+				}
+				// Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
+				return '关闭提示'
+			} else {
+				window.onbeforeunload = null
+			}
+		}
 		const uName = sessionStorage.getItem('uName')
 		const uPass = sessionStorage.getItem('uPass')
 		if (uName === null || uPass === null) {
