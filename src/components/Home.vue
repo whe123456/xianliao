@@ -183,7 +183,7 @@
 								<div class="input-field">
 									<div class="panel-control">
 										<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
-										<label class="panel-block app-icon-bag i-file">
+										<!--<label class="panel-block app-icon-bag i-file">
 											<el-upload
 												ref="upload"
 												action="https://jsonplaceholder.typicode.com/posts/"
@@ -191,7 +191,7 @@
 												:limit="1">
 												<el-button slot="trigger" size="small" type="primary" class="input-file"></el-button>
 											</el-upload>
-										</label>
+										</label>-->
 										<div class="mc" v-show="show_panel" @click="showPanel"></div>
 										<div class="emoticon-panel" v-show="show_panel">
 											<div class="body">
@@ -495,16 +495,15 @@ export default {
 			this.activeName = 'first'
 		},
 		initWebSocket() { /*初始化weosocket*/
-			this.socketApi.sendSock({'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
+			this.socketApi.sendSock({'type': 'getList', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
 		},
 		websocketonmessage(msg) { //数据接收
-			console.log(msg)
 			const _this = this
 			switch (msg.type) {
 			case 'push_msg':
 				_this.selectTalk(msg.msg_content)
 				break
-			case 'login':
+			case 'getList':
 				_this.FriendList = msg.user_list.friends
 				_this.GroupList = msg.user_list.groups
 				_this.mUid = msg.user_list.userid

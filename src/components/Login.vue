@@ -41,6 +41,8 @@ export default {
 			// 接收回调函数返回数据的方法
 			console.log(res)
 			if (res.type === 'login') {
+				sessionStorage.setItem('uName', this.ruleForm.username) //18308465172
+				sessionStorage.setItem('uPass', this.ruleForm.password) //w13540010
 				this.loading = false
 				this.$router.push('/')
 			}
@@ -51,8 +53,6 @@ export default {
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
 					self.socketApi.sendSock({'type': 'login', 'content': {'phone': self.ruleForm.username, 'pass': self.ruleForm.password}}, self.getConfigResult)
-					sessionStorage.setItem('uName', self.ruleForm.username) //18308465172
-					sessionStorage.setItem('uPass', self.ruleForm.password) //w13540010
 				} else {
 					console.log('error submit!!')
 					return false
