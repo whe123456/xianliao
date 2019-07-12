@@ -1,4 +1,5 @@
 import vm from '@/main'
+import util from '@/util/util'
 var websock = null
 var globalCallback = null
 
@@ -7,6 +8,7 @@ function initWebSocket() {
 	// ws地址 -->这里是你的请求路径
 	var ws = 'ws://192.168.0.188:8500'
 	websock = new WebSocket(ws)
+	websock.binaryType = 'arraybuffer'
 	websock.onmessage = function(e) {
 		websocketonmessage(e)
 	}
@@ -44,57 +46,24 @@ function sendSock(agentData, callback) {
 
 // 数据接收
 function websocketonmessage(e) { //数据接收
-	const msg = JSON.parse(e.data)
+	const encode = util.binaryToStr(e.data)
+	const JsonData = util.decrypt(encode)
+	console.log(JsonData)
+	const msg = JSON.parse(JsonData)
 	console.log(msg)
 	if (globalCallback === null) {
 		return
 	}
 	globalCallback(msg)
-	/*var sender/!*, userName, nameList, changeType*!/
-	console.log(msg)
-	const _this = this
-	switch (msg.type) {
-	case 'system':
-		sender = '系统消息: '
-		break
-	case 'push_msg':
-		_this.selectTalk(msg.msg_content)
-		break
-	case 'handshake':
-		/!*const userInfo = {'type': 'login', 'content': {'phone': this.uName, 'pass': this.uPass}}
-		_this.websocketsend(userInfo)*!/
-		return
-	case 'login':
-		_this.FriendList = msg.user_list.friends
-		_this.GroupList = msg.user_list.groups
-		return
-	case 'send_msg':
-		if (msg.msg_info.state === 1) {
-			_this.selectTalk({
-				squareUrl: '',
-				uName: '',
-				lastTime: '',
-				lastText: '',
-				uid: msg.msg_info.push_uid,
-				newCount: 0,
-				list: [{msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2}],
-				type: 'friends'
-			})
-		}
-		return
-	case 'logout':
-		/!*userName = msg.content
-		nameList = msg.user_list
-		changeType = msg.type
-		dealUser(userName, changeType, nameList)*!/
-		return
-	}
-	console.log(sender + msg.content)*/
 }
 
 // 数据发送
 function websocketsend(agentData) {
-	websock.send(JSON.stringify(agentData))
+	const JsonData = JSON.stringify(agentData)
+	console.log(JsonData)
+	const encryptData = util.encrypt(JsonData)
+	console.log(encryptData)
+	websock.send(util.strToBinary(encryptData))
 }
 
 // 关闭

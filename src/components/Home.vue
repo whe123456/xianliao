@@ -477,17 +477,22 @@ export default {
 			this.selectTalk(Talk)
 		},
 		selectTalk(data) {
-			const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
-			if (~findIndex) {
-				let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
-				console.log('list', TheFind[0].list)
-				TheFind[0].list = TheFind[0].list.concat(data.list)
-				console.log('list', TheFind[0].list)
-				this.TalkList.splice(findIndex, 1)
-				this.TalkList = TheFind.concat(this.TalkList)
+			console.log(this.TalkList)
+			if (this.TalkList.length === 0) {
+				this.TalkList = [data]
 			} else {
-				const Talk = [data]
-				this.TalkList = Talk.concat(this.TalkList)
+				const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
+				if (~findIndex) {
+					let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+					console.log('list', TheFind[0].list)
+					TheFind[0].list = TheFind[0].list.concat(data.list)
+					console.log('list', TheFind[0].list)
+					this.TalkList.splice(findIndex, 1)
+					this.TalkList = TheFind.concat(this.TalkList)
+				} else {
+					const Talk = [data]
+					this.TalkList = Talk.concat(this.TalkList)
+				}
 			}
 			console.log(this.TalkList)
 			this.selectIndex = 0

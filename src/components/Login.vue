@@ -22,8 +22,8 @@ export default {
 	data() {
 		return {
 			ruleForm: {
-				username: '',
-				password: ''
+				username: '18308465172',
+				password: 'w13540010'
 			},
 			rules: {
 				username: [
@@ -34,6 +34,14 @@ export default {
 				]
 			},
 			loading: false
+		}
+	},
+	sockets: {
+		connect() {
+			console.log('socket connected')
+		},
+		chatevent(data) { //监听message事件，方法是后台定义和提供的
+			console.log(data)
 		}
 	},
 	methods: {
@@ -52,7 +60,13 @@ export default {
 			this.loading = true
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
-					self.socketApi.sendSock({'type': 'login', 'content': {'phone': self.ruleForm.username, 'pass': self.ruleForm.password}}, self.getConfigResult)
+					var obj = {
+						userid: '10926',
+						pass: 'bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a'
+					}
+					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
+						console.log(e)
+					})
 				} else {
 					console.log('error submit!!')
 					return false
