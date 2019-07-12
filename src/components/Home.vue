@@ -402,6 +402,11 @@ export default {
 			mUid: ''
 		}
 	},
+	sockets: {
+		chatevent(data) { //监听message事件，方法是后台定义和提供的
+			console.log(data)
+		}
+	},
 	methods: {
 		handleClick(e) {
 			this.activeName = e
@@ -606,7 +611,7 @@ export default {
 				window.onbeforeunload = null
 			}
 		}
-		const uName = sessionStorage.getItem('uName')
+		/*const uName = sessionStorage.getItem('uName')
 		const uPass = sessionStorage.getItem('uPass')
 		if (uName === null || uPass === null) {
 			this.$router.push('/Login')
@@ -614,7 +619,7 @@ export default {
 		}
 		this.uName = uName
 		this.uPass = uPass
-		this.SocketUrl = sessionStorage.getItem('url')
+		this.SocketUrl = sessionStorage.getItem('url')*/
 		const file = require.context('../assets/empticon/', false, /.png$/).keys()
 		var array = Object.values(file.reduce((res, item, index) => {
 			const src = require('../assets/empticon/' + item.substring(2))
@@ -623,7 +628,10 @@ export default {
 		}, {}))
 		console.log(array)
 		this.empticon = array
-		this.initWebSocket()
+		// this.initWebSocket()
+		this.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
+			console.log(e)
+		})
 	}
 }
 </script>

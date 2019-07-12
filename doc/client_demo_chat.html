@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+<head>
+    <title>websocket测试</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+    <script src="http://imag0.xmxing.net/static/wap/smart_customer_service/js/socket.io/socket.io.js"></script>
+
+</head>
+<body style="position: relative;">
+
+<div>
+    <button id="connect_qr" onclick="connectWebQr()">扫码登录</button>
+</div>
+<div>
+    <button id="connect" onclick="connectWeb()">登录</button>
+</div>
+<div>
+    <button id="send_msg" onclick="send_msg()">发送私聊</button>
+</div>
+<div>
+    <button id="send_group_msg" onclick="send_group_msg()">发送群聊</button>
+</div>
+</div>
+
+
+</body>
+</html>
+<script>
+    var socket;
+    var myuid;
+
+    function addLinstener() {
+//断开连接
+        socket.on('disconnect', function () {
+            console.log("连接断开了");
+            alert('连接断开了');
+
+        });
+        socket.on('chatevent', function (data, ackServerCallback) {
+            console.log(data, data['cmd'], 2227777);
+            if (ackServerCallback) {
+                ackServerCallback(str = 'yes');
+            }
+            if (data['cmd'] == 1403) {//收到消息
+                //收到消息
+                data['data'];//消息json 数组  data['data']
+
+                // 例子： "[{"at_list":"[]","body":"官方分","file_url":"","body_id":389,"create_ts":"2019-07-12 13:29:53","file_time":0,"from_create_app":0,"from_uid":10926,"group_id":0,"is_group":0,"is_sync":0,"is_systemmsg":0,"is_web_receive":0,"message_type":0,"sign":"111701562909365775","state":0,"to_uid":10925,"type":0,"upload_id":0}]"
+
+                //未注释的不用管
+                // [{
+                //     "body": "官方分",//文字内容  type=0时
+                //     "file_url": "",//非文字内容的资源地址（如：图片或视频）
+                //     "create_ts": "2019-07-12 13:29:53", //发送时间（服务器时间）
+                //     "from_uid": 10926,//发送消息的用户uid
+                //     "group_id": 0,//群id
+                //     "is_group": 0,//是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
+                //     "sign": "111701562909365775",
+                //     "to_uid": 10925,//接收消息的用户uid（可能不是自己（同步的消息from_uid是自己 to_uid是好友））
+                //     "type": 0,//息消内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片 目前只处理（0 4 ）
+                // }]
+
+            }else if(data['cmd'] == 1407){//扫码登录，客户端确认
+                dealLoginCall(data['data']);
+            }
+        });
+    }
+
+    function connectWeb() {
+        socket = io.connect('http://192.168.0.136:6821');//
+        socket.on('connect', function () { //连接
+            login();
+        });
+        addLinstener();
+
+    }
+    function connectWebQr() {
+        socket = io.connect('http://192.168.0.136:6821');//
+        socket.on('connect', function () { //连接
+            loginQr();
+        });
+        addLinstener();
+
+    }
+
+    function sendMessage(type, obj) {
+        console.log(JSON.stringify(obj), 8888888888)
+        var jsonObject = {cmd: type, data: JSON.stringify(obj)};
+        if (socket != null) {
+            socket.emit('chatevent', jsonObject, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
+                console.log("sendMessage arg1: " + arg1, 111);
+                var result = JSON.parse(arg1);
+                if (result['state'] == 1) {//发送成功
+                    console.log("sendMessage 发送成功 msg: " + result['msg']);//
+                } else {//发送失败
+                    console.log("sendMessage 发送失败 msg: " + result['msg']);
+                }
+            });
+        }
+    }
+
+
+    function dealLoginCall(arg1) {
+        var result = JSON.parse(arg1);
+        if (result['state'] == 1) {//登录成功
+            console.log("login userinfo: " + result['userinfo']);//我的个人信息
+            myuid = result['userinfo']['userid'];
+            getFriends();
+        } else {//登录失败
+            console.log("login userinfo: " + result['msg']);
+        }
+    }
+
+    /**
+     * 登录
+     * */
+    function login() {
+        var obj = {
+            userid: "10926",
+            pass: "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
+        };
+        var jsonObjectF = {cmd: 1401, data: JSON.stringify(obj)}; //登录命令 1041
+        if (socket != null) {
+            socket.emit('chatevent', jsonObjectF, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
+                console.log("login! arg1: " + arg1);
+                dealLoginCall(arg1);
+            });
+        }
+    }
+    /**
+     * 登录扫码
+     * */
+    function loginQr() {
+        var jsonObjectF = {cmd: 1406, data: ""}; //登录命令 1406
+        if (socket != null) {
+            socket.emit('chatevent', jsonObjectF, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
+                var result = JSON.parse(arg1);
+                if (result['state'] == 1) {//成功
+                    console.log("login qr_code: " + result['qr_code']);//二维码字符串
+                } else {//登录失败
+                    console.log("login userinfo: " + result['msg']);
+                }
+
+            });
+        }
+    }
+
+    /**
+     * 获取好友和群信息
+     */
+    function getFriends() {
+        var jsonObjectF = {cmd: 1404, data: ""};//命令 1404
+        if (socket != null) {
+            socket.emit('chatevent', jsonObjectF, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
+                console.log("ack from server! arg1: " + arg1);
+                //demo数据  未备注的信息不用管
+                // {	"state": 1,
+                //     "msg": "成功",
+                //     "groups": [{ //群组信息列表
+                //     "all_no_speak": 0, //全体禁言 0未开启 1：开启
+                //     "create_by": 10925,  //创建者uid
+                //     "delete_after_reading": 0,  //阅后即焚  0未开启 1：开启
+                //     "group_id": 18, //群id
+                //     "protected_mode": 0, //保护模式  0未开启 1：开启
+                //     "title": "*0925、好汉-、大米" //群名称
+                // }],
+                //     "friends": [{  //好友信息列表
+                //     "birthDay": 20141114,  //生日
+                //     "email": "",  //邮箱
+                //     "friend_uid": 10925,//好友uid
+                //     "friend_uuid": "10925",//好友uuid 用于登录和展示，注意不用了通讯发消息
+                //     "head_url": "http://mixinimage.test.upcdn.net/2019/4/10925/1555301412/4752486.jpg",//好友头像
+                //     "nick": "*0925", //好友昵称
+                //     "nick_mark": "", //备注
+                //     "sex": 1, //性别 0女1男
+                // }]
+                // }
+
+            });
+        }
+    }
+
+    /**
+     * 发送消息
+     */
+    function send_msg() {
+        var obj = {
+            from_uid: myuid,//我自己的uid
+            is_group: 0,//是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
+            to_uid: 10925,//好友的uid 主要不是uuid
+            group_id: 0,//群消息 id
+            type: 0,//息消内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
+            body: "测试发送消息",//文字信息内容
+            file_url: "",//非文字内容的资源地址（如：图片或视频，需要传这个）
+        };
+        sendMessage(1403, obj)//命令 1404
+    }
+    /**
+     * 发送群消息
+     */
+    function send_group_msg() {
+        var obj = {
+            from_uid: myuid,//我自己的uid
+            is_group: 1,//是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
+            to_uid: 0,//好友的uid 注意不是uuid
+            group_id: 18,//群消息 id
+            type: 0,//息消内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
+            body: "测试发送消息",//文字信息内容
+            file_url: "",//非文字内容的资源地址（如：图片或视频，需要传这个）
+        };
+        sendMessage(1403, obj)//命令 1404
+    }
+
+</script>

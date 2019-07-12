@@ -65,7 +65,8 @@ export default {
 						pass: 'bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a'
 					}
 					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
-						console.log(e)
+						self.loading = false
+						self.$router.push('/')
 					})
 				} else {
 					console.log('error submit!!')
