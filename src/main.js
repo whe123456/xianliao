@@ -8,11 +8,11 @@ import 'element-ui/lib/theme-chalk/index.css'
 import Vuex from 'vuex'
 import './styles/global.scss'
 // import * as socketApi from './util/socket'
-import VueSocketio from 'vue-socket.io'
+/*import VueSocketio from 'vue-socket.io'
 Vue.use(new VueSocketio({
 	debug: true,
 	connection: 'http://192.168.0.136:6821'
-}))
+}))*/
 // WebSocket封装方法
 // Vue.prototype.socketApi = socketApi
 Vue.config.productionTip = false

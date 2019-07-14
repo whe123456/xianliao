@@ -597,7 +597,7 @@ export default {
 		this.websocketclose()
 	},
 	mounted() {
-		const _this = this
+		/*const _this = this
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
 				e = e || window.event
@@ -611,7 +611,7 @@ export default {
 				window.onbeforeunload = null
 			}
 		}
-		/*const uName = sessionStorage.getItem('uName')
+		const uName = sessionStorage.getItem('uName')
 		const uPass = sessionStorage.getItem('uPass')
 		if (uName === null || uPass === null) {
 			this.$router.push('/Login')
@@ -626,12 +626,51 @@ export default {
 			res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
 			return res
 		}, {}))
-		console.log(array)
 		this.empticon = array
 		// this.initWebSocket()
-		this.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
+		const data = JSON.parse('{"msg":"成功","groups":[{"all_no_speak":0,"create_by":10925,"delete_after_reading":0,"group_id":18,"is_fix":0,"max_member":200,"need_auth":0,"protected_mode":0,"title":"*0925、好汉-、大米"}],"state":1,"friends":[{"birthDay":0,"delete_after_reading":0,"email":"","friend_uid":10925,"friend_uuid":"10925","head_url":"http://mixinimage.test.upcdn.net/2019/4/10925/1555301412/4752486.jpg","nick":"*0925","nick_mark":"","request":1,"request_message":"你好！","request_time":"2019-01-07 11:30:53","sex":1,"state":1,"type":0,"uid":10926},{"birthDay":20141114,"delete_after_reading":0,"email":"","friend_uid":10999,"friend_uuid":"10999","head_url":"","nick":"999","nick_mark":"","request":1,"request_time":"2019-03-29 13:39:51","sex":1,"state":0,"type":0,"uid":10926}]}')
+		const rData = data.friends.reduce((res, item, index) => {
+			item['py'] = 'a' + index
+			item['index'] = index
+			res[index] = item
+			return res
+		}, [])
+		const friendsData = rData.reduce((res, item) => {
+			const index = res.findIndex(n => n.slice === item['py'])
+			if (~index) {
+				res[item['index']].info.push(item)
+			} else {
+				res[item['index']] = {
+					slice: item['py'],
+					info: [item]
+				}
+			}
+			return res
+		}, [])
+		this.FriendList = friendsData
+		const gData = data.groups.reduce((res, item, index) => {
+			item['py'] = 'a' + index
+			item['index'] = index
+			res[index] = item
+			return res
+		}, [])
+		const groupsData = gData.reduce((res, item) => {
+			const index = res.findIndex(n => n.slice === item['py'])
+			if (~index) {
+				res[item['index']].info.push(item)
+			} else {
+				res[item['index']] = {
+					slice: item['py'],
+					info: [item]
+				}
+			}
+			return res
+		}, [])
+		this.FriendList = friendsData
+		this.GroupList = groupsData
+		/*this.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
 			console.log(e)
-		})
+		})*/
 	}
 }
 </script>

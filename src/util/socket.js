@@ -6,7 +6,7 @@ var globalCallback = null
 // 初始化weosocket
 function initWebSocket() {
 	// ws地址 -->这里是你的请求路径
-	var ws = 'ws://192.168.0.188:8500'
+	var ws = 'ws://192.168.0.106:8500'
 	websock = new WebSocket(ws)
 	websock.binaryType = 'arraybuffer'
 	websock.onmessage = function(e) {
