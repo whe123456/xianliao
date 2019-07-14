@@ -678,20 +678,6 @@ export default {
 <style lang="scss">
 </style>
 <style lang="scss" scoped>
-	.wrapper{
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		right: 0;
-		min-height: 550px;
-		min-width: 900px;
-		background: url(../assets/app-bg.jpg) 100% no-repeat;
-	}
 	.app_main{
 		display: flex;
 		min-width: 900px;

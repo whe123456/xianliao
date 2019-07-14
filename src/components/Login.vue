@@ -1,19 +1,34 @@
 <template>
-    <div class="login-wrap">
-        <div class="ms-title">闲聊登录</div>
-        <div class="ms-login" v-loading="loading">
-            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px" class="demo-ruleForm">
-                <el-form-item prop="username">
-                    <el-input v-model="ruleForm.username" placeholder="用户名"></el-input>
-                </el-form-item>
-                <el-form-item prop="password">
-                    <el-input type="password" placeholder="密码" v-model="ruleForm.password" @keyup.enter.native="submitForm('ruleForm')"></el-input>
-                </el-form-item>
-                <div class="login-btn">
-                    <el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
-                </div>
-            </el-form>
-        </div>
+    <div class="wrapper">
+		<div class="app-login" v-if="qr">
+			<div class="login-scan">
+				<div class="title">闲聊</div>
+				<div class="scan-area" v-loading="loading">
+					<div class="qr-content">
+						<div class="qr">
+							<canvas width="266" height="266" style="width: 266px; height: 266px;"></canvas>
+						</div>
+					</div>
+				</div>
+				<div class="tips-content"><div class="tips-main" @click="qrchange">请使用手机闲聊扫码登录</div></div>
+			</div>
+		</div>
+		<div class="login-scan" v-else>
+			<div class="ms-title" @click="qrchange">闲聊登录</div>
+			<div class="ms-login" v-loading="loading">
+				<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px" class="demo-ruleForm">
+					<el-form-item prop="username">
+						<el-input v-model="ruleForm.username" placeholder="用户名"></el-input>
+					</el-form-item>
+					<el-form-item prop="password">
+						<el-input type="password" placeholder="密码" v-model="ruleForm.password" @keyup.enter.native="submitForm('ruleForm')"></el-input>
+					</el-form-item>
+					<div class="login-btn">
+						<el-button type="primary" @click="submitForm('ruleForm')">登录</el-button>
+					</div>
+				</el-form>
+			</div>
+		</div>
     </div>
 </template>
 
@@ -33,7 +48,8 @@ export default {
 					{ required: true, message: '请输入密码', trigger: 'blur' }
 				]
 			},
-			loading: false
+			loading: false,
+			qr: false
 		}
 	},
 	sockets: {
@@ -73,6 +89,9 @@ export default {
 					return false
 				}
 			})
+		},
+		qrchange() {
+			this.qr = !this.qr
 		}
 	},
 	mounted() {
@@ -85,22 +104,13 @@ export default {
 	}
 }
 </script>
-<style scoped>
-    .login-wrap{
-        width:100%;
-        height:100%;
-        background: #324157;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-    }
-    .ms-title{
-        text-align: center;
-        font-size:30px;
-        color: #fff;
+<style lang="scss" scoped>
+	.ms-title{
+		text-align: center;
+		font-size:30px;
+		color: #fff;
 		margin-bottom: 40px;
-    }
+	}
     .ms-login{
         width:300px;
         height:160px;
@@ -114,4 +124,39 @@ export default {
         width:100%;
         height:36px;
     }
+	.app-login {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		margin-top: -270px;
+		margin-left: -190px;
+		height: 540px;
+		width: 380px;
+		border-radius: 5px;
+		background-color: #fff;
+		text-align: center;
+		.login-scan {
+			padding: 54px 38px;
+			text-align: center;
+			.title {
+				font-size: 26px;
+				text-align: left;
+				margin-bottom: 48px;
+			}
+			.qr-content {
+				height: 266px;
+				width: 266px;
+				margin: auto;
+				position: relative;
+				background-color: #e1e1e1;
+			}
+			.tips-content {
+				margin-top: 44px;
+				.tips-main {
+					font-size: 20px;
+					color: #888;
+				}
+			}
+		}
+	}
 </style>
