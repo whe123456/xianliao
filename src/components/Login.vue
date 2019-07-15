@@ -6,7 +6,7 @@
 				<div class="scan-area" v-loading="loading">
 					<div class="qr-content">
 						<div class="qr">
-							<canvas width="266" height="266" style="width: 266px; height: 266px;"></canvas>
+							<div id="qrcode"></div>
 						</div>
 					</div>
 				</div>
@@ -33,12 +33,13 @@
 </template>
 
 <script>
+import QRCode from 'qrcodejs2' // 引入qrcode
 export default {
 	data() {
 		return {
 			ruleForm: {
-				username: '18308465172',
-				password: 'w13540010'
+				username: '',
+				password: ''
 			},
 			rules: {
 				username: [
@@ -49,7 +50,7 @@ export default {
 				]
 			},
 			loading: false,
-			qr: false
+			qr: true
 		}
 	},
 	sockets: {
@@ -57,20 +58,18 @@ export default {
 			console.log('socket connected')
 		},
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
-			console.log(data)
+			if (data.cmd === 1407) {
+				const info = JSON.parse(data.data)
+				sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
+				this.$router.push('/')
+			} else if (data.cmd === 1405) {
+				this.$alert(data.data, '提示', {
+					confirmButtonText: '确定'
+				})
+			}
 		}
 	},
 	methods: {
-		getConfigResult(res) {
-			// 接收回调函数返回数据的方法
-			console.log(res)
-			if (res.type === 'login') {
-				sessionStorage.setItem('uName', this.ruleForm.username) //18308465172
-				sessionStorage.setItem('uPass', this.ruleForm.password) //w13540010
-				this.loading = false
-				this.$router.push('/')
-			}
-		},
 		submitForm(formName) {
 			const self = this
 			this.loading = true
@@ -81,6 +80,8 @@ export default {
 						pass: 'bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a'
 					}
 					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
+						const info = JSON.parse(e)
+						sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 						self.loading = false
 						self.$router.push('/')
 					})
@@ -95,12 +96,28 @@ export default {
 		}
 	},
 	mounted() {
-		const uName = sessionStorage.getItem('uName')
-		const uPass = sessionStorage.getItem('uPass')
-		if (uName != null && uPass !== null) {
+		const Login = sessionStorage.getItem('Login')
+		console.log(Login)
+		if (Login !== null) {
 			this.$router.push('/')
 			return false
 		}
+		const self = this
+		self.$socket.emit('chatevent', {cmd: 1406, data: ''}, function(e) {
+			self.loading = false
+			const data = JSON.parse(e)
+			console.log(data)
+			if (data.state === 1) {
+				let qrcode = new QRCode('qrcode', {
+					width: 266,
+					height: 266,
+					text: data.qr_code, // 二维码地址
+					colorDark: '#000',
+					colorLight: '#fff'
+				})
+				console.log(qrcode)
+			}
+		})
 	}
 }
 </script>

@@ -19,7 +19,7 @@
 						</el-dropdown>
 					</div>
 					<div class="inner-l-body">
-						<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="uName" @select="handleSelect"></el-autocomplete>
+						<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="nick" @select="handleSelect"></el-autocomplete>
 						<ul class="list-type-nav">
 							<li class="list-type-option" @click="handleClick('first')">
 								<i class="el_icon_select" :class="{ session: activeName!=='first', session2: activeName==='first' }"></i>
@@ -40,14 +40,14 @@
 							active-text-color="#FFF" v-show="TalkList.length>0">
 								<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
 									<div class="option-l">
-										<el-avatar shape="square" :size="42" :src="item.squareUrl">
+										<el-avatar shape="square" :size="42" :src="item.head_url">
 											<img :src="squareUrl"/>
 										</el-avatar>
 									</div>
 									<div class="option-r">
 										<div class="option-line">
 											<div class="dialog-title">
-												<div class="dialog-name">{{item.uName}}</div>
+												<div class="dialog-name">{{item.nick}}</div>
 											</div>
 											<div class="last-time">{{item.lastTime}}</div>
 										</div>
@@ -73,13 +73,13 @@
 									<template slot="title" class="contact-slice">{{item.slice}}</template>
 									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
 										<div class="option-l">
-											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
 												<img :src="squareUrl"/>
 											</el-avatar>
 										</div>
 										<div class="option-r">
 											<div class="option-line">
-												<div class="dialog-title">{{info.uName}}</div>
+												<div class="dialog-title">{{info.nick}}</div>
 											</div>
 										</div>
 									</el-menu-item>
@@ -96,13 +96,13 @@
 									<template slot="title" class="contact-slice">{{item.slice}}</template>
 									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
 										<div class="option-l">
-											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
 												<img :src="squareUrl"/>
 											</el-avatar>
 										</div>
 										<div class="option-r">
 											<div class="option-line">
-												<div class="dialog-title">{{info.uName}}</div>
+												<div class="dialog-title">{{info.nick}}</div>
 											</div>
 										</div>
 									</el-menu-item>
@@ -121,13 +121,13 @@
 						</div>
 						<div v-else class="chat-box">
 							<div class="contact-header">
-								<div>{{Talkinfo.uName}}</div>
+								<div>{{Talkinfo.nick}}</div>
 							</div>
 							<!--<div class="contact-header" v-if="Talkinfo.type==='friends'">
-								<div>{{Talkinfo.uName}}</div>
+								<div>{{Talkinfo.nick}}</div>
 							</div>
 							<header class="chat-header j-chat-header" v-else-if="Talkinfo.type==='groups'" @click="showmember">
-								<div class="dialog-title">{{Talkinfo.uName}}</div>
+								<div class="dialog-title">{{Talkinfo.nick}}</div>
 								<div class="dialog-extend">({{Talkinfo.member.length}})</div>
 								<i class="member-status down"></i>
 							</header>-->
@@ -155,14 +155,14 @@
 													</div>
 												</div>
 												<div class="message-detail-s">
-													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+													<el-avatar shape="square" :size="40" :src="item.head_url" class="message-speaker-avatar">
 														<img :src="squareUrl"/>
 													</el-avatar>
 												</div>
 											</div>
 											<div :data-index="item.msgType" class="msg j-msg msg-chat" v-else-if="item.msgType===3">
 												<div class="message-detail-s">
-													<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+													<el-avatar shape="square" :size="40" :src="item.head_url" class="message-speaker-avatar">
 														<img :src="squareUrl"/>
 													</el-avatar>
 												</div>
@@ -241,15 +241,15 @@
 								<div>查看详情</div>
 							</div>
 							<div class="contact-body">
-								<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second">
+								<el-avatar shape="square" :size="100" :src="Friendinfo.head_url" class="user-avatar-second">
 									<img :src="squareUrl"/>
 								</el-avatar>
-								<div class="contact-name" v-show="Friendinfo.uName">
-									<p>{{Friendinfo.uName}}</p>
+								<div class="contact-name" v-show="Friendinfo.nick">
+									<p>{{Friendinfo.nick}}</p>
 									<i class="app-icon-bag i-man" v-if="Friendinfo.sex==1"></i>
 									<i class="app-icon-bag i-girl" v-else-if="Friendinfo.sex==2"></i>
 								</div>
-								<el-button type="primary" class="btn-success" v-show="Friendinfo.uName" @click="createMsg">发送消息</el-button>
+								<el-button type="primary" class="btn-success" v-show="Friendinfo.nick" @click="createMsg">发送消息</el-button>
 							</div>
 						</div>
 					</div>
@@ -262,10 +262,10 @@
 								<el-avatar shape="square" :size="100" :src="Groupinfo.squareUrl" class="user-avatar-second">
 									<img :src="squareUrl"/>
 								</el-avatar>
-								<div class="contact-name" v-show="Groupinfo.uName">
-									<p>{{Groupinfo.uName}}</p>
+								<div class="contact-name" v-show="Groupinfo.nick">
+									<p>{{Groupinfo.nick}}</p>
 								</div>
-								<el-button type="primary" class="btn-success" v-show="Groupinfo.uName" @click="createMsg('three')">发送消息</el-button>
+								<el-button type="primary" class="btn-success" v-show="Groupinfo.nick" @click="createMsg('three')">发送消息</el-button>
 							</div>
 						</div>
 					</div>
@@ -290,6 +290,7 @@
 
 <script>
 import editor from '@/components/Editor'
+const pinyin = require('pinyin')
 export default {
 	components: {
 		editor: editor
@@ -304,7 +305,7 @@ export default {
 			TalkList: [
 				/*{
 					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-					uName: '白犀牛',
+					nick: '白犀牛',
 					lastTime: '16:33',
 					lastText: '111',
 					newCount: 0,
@@ -328,7 +329,7 @@ export default {
 				},
 				{
 					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-					uName: '测试',
+					nick: '测试',
 					lastTime: '16:33',
 					lastText: '111',
 					newCount: 0,
@@ -363,14 +364,14 @@ export default {
 			],
 			Talkinfo: {},
 			selectIndex: '',
-			FriendList: /*数组字段py 拼音 uName 名称 squareUrl 头像 sex性别 uid发送消息id */
+			FriendList: /*数组字段py 拼音 nick 名称 squareUrl 头像 sex性别 uid发送消息id */
 			[
 				/*{
 					slice: 'c',
 					info: [
 						{
 							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							uName: 'c犀牛',
+							nick: 'c犀牛',
 							uid: 11031
 						}
 					]
@@ -392,9 +393,6 @@ export default {
 				}
 			},
 			websock: null,
-			uName: '',
-			uPass: '',
-			SocketUrl: '',
 			show_member: false,
 			show_Card: false,
 			screenX: 0,
@@ -404,7 +402,38 @@ export default {
 	},
 	sockets: {
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
+			if (data.cmd === 1405) {
+				this.$alert(data.data, '提示', {
+					confirmButtonText: '确定'
+				})
+			} else if (data.cmd === 1403) {
+				const tbData = JSON.parse(data.data)
+				tbData.forEach((item) => {
+					let msgType = 3
+					if (self.mUid !== item.to_uid) {
+						msgType = 2
+					}
+					let type = 'friends'
+					if (item.is_group === 1) {
+						type = 'groups'
+					}
+					self.selectTalk({
+						head_url: '',
+						nick: '',
+						lastTime: item.create_ts,
+						lastText: item.body,
+						uid: item.to_uid,
+						groupId: item.group_id,
+						newCount: tbData.length,
+						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
+						type: type
+					})
+				})
+			}
 			console.log(data)
+		},
+		disconnect() {
+			this.websocketclose()
 		}
 	},
 	methods: {
@@ -451,30 +480,68 @@ export default {
 			this.$refs.editor.setHtml(this.textarea)
 		},
 		sendMsg() {
-			const userInfo = {'type': 'send_msg', 'content': {'phone': this.uName, 'pass': this.uPass, 'userUrl': this.squareUrl, 'userName': this.userName, 'mUid': this.mUid, 'uid': this.Talkinfo.uid, 'msg': this.$refs.editor.getHtml()}}
-			console.log(userInfo)
-			this.socketApi.sendSock(userInfo, this.websocketonmessage)
-			this.textarea = ''
-			this.TalkList[0].newCount = 0
-			this.init()
+			let body = this.$refs.editor.getHtml().replace('<p>', '')
+			body = body.replace('</p>', '')
+			body = body.replace('<br>', '')
+			if (body === '') {
+				return
+			}
+			let isGroup = 1
+			if (this.Talkinfo.type === 'friends') {
+				isGroup = 0
+			}
+			const self = this
+			var obj = {
+				from_uid: this.mUid, //我自己的uid
+				is_group: isGroup, //是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
+				to_uid: this.Talkinfo.uid, //好友的uid 主要不是uuid
+				group_id: this.Talkinfo.groupId, //群消息 id
+				type: 0, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
+				body: body, //文字信息内容
+				file_url: '' //非文字内容的资源地址（如：图片或视频，需要传这个）
+			}
+			self.$socket.emit('chatevent', {cmd: 1403, data: JSON.stringify(obj)}, function(e) {
+				const info = JSON.parse(e)
+				if (info['state'] === 1) {
+					self.textarea = ''
+					self.TalkList[0].newCount = 0
+					self.init()
+					self.selectTalk({
+						head_url: self.Talkinfo.head_url,
+						nick: self.Talkinfo.nick,
+						lastTime: '',
+						lastText: '',
+						uid: self.Talkinfo.uid,
+						groupId: self.Talkinfo.groupId,
+						newCount: 0,
+						list: [{msg: body, head_url: self.meUrl, msgType: 2}],
+						type: self.Talkinfo.type
+					})
+				}
+			})
 		},
 		createMsg(e) {
 			let info = {}
 			let type = ''
+			let groupId = ''
+			let uid = ''
 			if (e === 'three') {
 				info = this.Groupinfo
-				type = 'friends'
+				type = 'groups'
+				groupId = info.group_id
 			} else {
 				info = this.Friendinfo
-				type = 'groups'
+				type = 'friends'
+				uid = info.friend_uid
 			}
 			const Talk =
 				{
-					squareUrl: info.squareUrl,
-					uName: info.uName,
+					head_url: info.head_url,
+					nick: info.nick,
 					lastTime: '',
 					lastText: '',
-					uid: info.uid,
+					uid: uid,
+					groupId: groupId,
 					newCount: 0,
 					list: [],
 					type: type
@@ -482,16 +549,48 @@ export default {
 			this.selectTalk(Talk)
 		},
 		selectTalk(data) {
-			console.log(this.TalkList)
+			if (data.type === 'friends') {
+				let info = ''
+				console.log(data.uid, this.mUid, this.FriendList)
+				if (data.uid === this.mUid) {
+					this.FriendList.forEach((value) => {
+						const findinfo = value.info.find(n => n.uid === data.from_uid)
+						if (typeof findinfo !== 'undefined') {
+							info = findinfo
+						}
+					})
+				} else {
+					this.FriendList.forEach((value) => {
+						const findinfo = value.info.find(n => n.uid === data.uid)
+						if (typeof findinfo !== 'undefined') {
+							info = findinfo
+						}
+					})
+				}
+				if (info !== '') {
+					data.head_url = info.head_url
+					data.nick = info.nick
+				}
+			} else {
+				let info = ''
+				this.GroupList.forEach((value) => {
+					const findinfo = value.info.find(n => n.uid === data.uid)
+					if (typeof findinfo !== 'undefined') {
+						info = findinfo
+					}
+				})
+				if (info !== '') {
+					data.head_url = info.head_url
+					data.nick = info.nick
+				}
+			}
 			if (this.TalkList.length === 0) {
 				this.TalkList = [data]
 			} else {
 				const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
 				if (~findIndex) {
 					let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
-					console.log('list', TheFind[0].list)
 					TheFind[0].list = TheFind[0].list.concat(data.list)
-					console.log('list', TheFind[0].list)
 					this.TalkList.splice(findIndex, 1)
 					this.TalkList = TheFind.concat(this.TalkList)
 				} else {
@@ -505,42 +604,85 @@ export default {
 			this.activeName = 'first'
 		},
 		initWebSocket() { /*初始化weosocket*/
-			this.socketApi.sendSock({'type': 'getList', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
-		},
-		websocketonmessage(msg) { //数据接收
-			const _this = this
-			switch (msg.type) {
-			case 'push_msg':
-				_this.selectTalk(msg.msg_content)
-				break
-			case 'getList':
-				_this.FriendList = msg.user_list.friends
-				_this.GroupList = msg.user_list.groups
-				_this.mUid = msg.user_list.userid
-				break
-			case 'send_msg':
-				if (msg.msg_info.state === 1) {
-					_this.selectTalk({
-						squareUrl: '',
-						uName: '',
-						lastTime: '',
-						lastText: '',
-						uid: msg.msg_info.push_uid,
-						newCount: 0,
-						list: [{msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2}],
-						type: 'friends'
+			const file = require.context('../assets/empticon/', false, /.png$/).keys()
+			var array = Object.values(file.reduce((res, item, index) => {
+				const src = require('../assets/empticon/' + item.substring(2))
+				res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
+				return res
+			}, {}))
+			this.empticon = array
+			const self = this
+			self.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
+				const data = JSON.parse(e)
+				const rData = data.friends.reduce((res, item, index) => {
+					item['py'] = (pinyin(item.nick.substring(0, 1), {
+						style: pinyin.STYLE_FIRST_LETTER
+					}))[0][0].toUpperCase()
+					item['index'] = index
+					item['uid'] = item.friend_uid
+					res[index] = item
+					return res
+				}, [])
+				console.log(rData)
+				const friendsData = rData.reduce((res, item) => {
+					const index = res.findIndex(n => n.slice === item['py'])
+					if (~index) {
+						res[item['index']].info.push(item)
+					} else {
+						res[item['index']] = {
+							slice: item['py'],
+							info: [item]
+						}
+					}
+					return res
+				}, [])
+				self.FriendList = friendsData
+				const gData = data.groups.reduce((res, item, index) => {
+					item['py'] = (pinyin(item.title.substring(0, 1), {
+						style: pinyin.STYLE_FIRST_LETTER
+					}))[0][0].toUpperCase()
+					item['nick'] = item['title']
+					item['index'] = index
+					res[index] = item
+					return res
+				}, [])
+				const groupsData = gData.reduce((res, item) => {
+					const index = res.findIndex(n => n.slice === item['py'])
+					if (~index) {
+						res[item['index']].info.push(item)
+					} else {
+						res[item['index']] = {
+							slice: item['py'],
+							info: [item]
+						}
+					}
+					return res
+				}, [])
+				self.GroupList = groupsData
+				/*const tbData = JSON.parse('[{"at_list":"[]","body":"官方分","file_url":"","body_id":389,"create_ts":"2019-07-12 13:29:53","file_time":0,"from_create_app":0,"from_uid":10926,"group_id":0,"is_group":0,"is_sync":0,"is_systemmsg":0,"is_web_receive":0,"message_type":0,"sign":"111701562909365775","state":0,"to_uid":10925,"type":0,"upload_id":0}]')
+				tbData.forEach((item) => {
+					let msgType = 3
+					if (self.mUid !== item.to_uid) {
+						msgType = 2
+					}
+					let type = 'friends'
+					if (item.is_group === 1) {
+						type = 'groups'
+					}
+					self.selectTalk({
+						head_url: '',
+						nick: '',
+						lastTime: item.create_ts,
+						lastText: item.body,
+						uid: item.to_uid,
+						from_uid: item.from_uid,
+						groupId: item.group_id,
+						newCount: tbData.length,
+						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
+						type: type
 					})
-				}
-				break
-			case 'logout':
-				_this.websocketclose()
-				break
-			}
-		},
-		websocketclose(e) { //关闭
-			console.log('connection closed ', e)
-			sessionStorage.clear()
-			this.$router.push('/Login')
+				})*/
+			})
 		},
 		closesocket() {
 			console.log(11)
@@ -553,7 +695,7 @@ export default {
 			switch (this.activeName) {
 			case 'first':
 				data = this.TalkList.filter((value) => {
-					return value.uName.includes(queryString)
+					return value.nick.includes(queryString)
 				})
 				break
 			case 'second':
@@ -562,7 +704,7 @@ export default {
 				})
 				data = info.reduce((a, b) => { return a.concat(b) })
 				data = data.filter((value) => {
-					return value.uName.includes(queryString)
+					return value.nick.includes(queryString)
 				})
 				break
 			case 'three':
@@ -571,7 +713,7 @@ export default {
 				})
 				data = tinfo.reduce((a, b) => { return a.concat(b) })
 				data = data.filter((value) => {
-					return value.uName.includes(queryString)
+					return value.nick.includes(queryString)
 				})
 				break
 			}
@@ -590,6 +732,10 @@ export default {
 				this.Groupinfo = item
 				break
 			}
+		},
+		websocketclose() {
+			// sessionStorage.clear()
+			// this.$router.push('/Login')
 		}
 	},
 	destroyed() {
@@ -597,7 +743,7 @@ export default {
 		this.websocketclose()
 	},
 	mounted() {
-		/*const _this = this
+		const _this = this
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
 				e = e || window.event
@@ -611,66 +757,17 @@ export default {
 				window.onbeforeunload = null
 			}
 		}
-		const uName = sessionStorage.getItem('uName')
-		const uPass = sessionStorage.getItem('uPass')
-		if (uName === null || uPass === null) {
+		const Login = sessionStorage.getItem('Login')
+		console.log(Login)
+		if (Login === null) {
 			this.$router.push('/Login')
 			return false
 		}
-		this.uName = uName
-		this.uPass = uPass
-		this.SocketUrl = sessionStorage.getItem('url')*/
-		const file = require.context('../assets/empticon/', false, /.png$/).keys()
-		var array = Object.values(file.reduce((res, item, index) => {
-			const src = require('../assets/empticon/' + item.substring(2))
-			res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
-			return res
-		}, {}))
-		this.empticon = array
-		// this.initWebSocket()
-		const data = JSON.parse('{"msg":"成功","groups":[{"all_no_speak":0,"create_by":10925,"delete_after_reading":0,"group_id":18,"is_fix":0,"max_member":200,"need_auth":0,"protected_mode":0,"title":"*0925、好汉-、大米"}],"state":1,"friends":[{"birthDay":0,"delete_after_reading":0,"email":"","friend_uid":10925,"friend_uuid":"10925","head_url":"http://mixinimage.test.upcdn.net/2019/4/10925/1555301412/4752486.jpg","nick":"*0925","nick_mark":"","request":1,"request_message":"你好！","request_time":"2019-01-07 11:30:53","sex":1,"state":1,"type":0,"uid":10926},{"birthDay":20141114,"delete_after_reading":0,"email":"","friend_uid":10999,"friend_uuid":"10999","head_url":"","nick":"999","nick_mark":"","request":1,"request_time":"2019-03-29 13:39:51","sex":1,"state":0,"type":0,"uid":10926}]}')
-		const rData = data.friends.reduce((res, item, index) => {
-			item['py'] = 'a' + index
-			item['index'] = index
-			res[index] = item
-			return res
-		}, [])
-		const friendsData = rData.reduce((res, item) => {
-			const index = res.findIndex(n => n.slice === item['py'])
-			if (~index) {
-				res[item['index']].info.push(item)
-			} else {
-				res[item['index']] = {
-					slice: item['py'],
-					info: [item]
-				}
-			}
-			return res
-		}, [])
-		this.FriendList = friendsData
-		const gData = data.groups.reduce((res, item, index) => {
-			item['py'] = 'a' + index
-			item['index'] = index
-			res[index] = item
-			return res
-		}, [])
-		const groupsData = gData.reduce((res, item) => {
-			const index = res.findIndex(n => n.slice === item['py'])
-			if (~index) {
-				res[item['index']].info.push(item)
-			} else {
-				res[item['index']] = {
-					slice: item['py'],
-					info: [item]
-				}
-			}
-			return res
-		}, [])
-		this.FriendList = friendsData
-		this.GroupList = groupsData
-		/*this.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
-			console.log(e)
-		})*/
+		const LoginData = JSON.parse(Login)
+		this.userName = LoginData.nick
+		this.meUrl = LoginData.head_url
+		this.mUid = LoginData.userid
+		this.initWebSocket()
 	}
 }
 </script>

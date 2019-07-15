@@ -1,0 +1,635 @@
+<template>
+<div class="wrapper">
+<el-scrollbar class="app_main">
+<el-container>
+<div class="main-inner-l">
+<div class="inner-l-header">
+<div class="user-info">
+<el-avatar class="user-avatar-pic" shape="square" :size="42" :src="meUrl"></el-avatar>
+<span class="user-name">{{userName}}</span>
+</div>
+<el-dropdown trigger="click" @command="closesocket">
+<span class="el-dropdown-link">
+<i class="i_menu"></i>
+</span>
+<el-dropdown-menu slot="dropdown">
+<!--<el-dropdown-item><i class="el_icon-bell"></i>关闭桌面通知</el-dropdown-item>-->
+<el-dropdown-item><i class="el_icon-button"></i>退出</el-dropdown-item>
+</el-dropdown-menu>
+</el-dropdown>
+</div>
+<div class="inner-l-body">
+<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="uName" @select="handleSelect"></el-autocomplete>
+<ul class="list-type-nav">
+<li class="list-type-option" @click="handleClick('first')">
+<i class="el_icon_select" :class="{ session: activeName!=='first', session2: activeName==='first' }"></i>
+</li>
+<li class="list-type-option" @click="handleClick('second')">
+<i class="el_icon_select" :class="{ contact: activeName!=='second', contact2: activeName==='second' }"></i>
+</li>
+<li class="list-type-option" @click="handleClick('three')">
+<i class="el_icon_select" :class="{ contact: activeName!=='three', contact2: activeName==='three' }"></i>
+</li>
+</ul>
+<div v-show="activeName==='first'">
+<el-menu
+class="el-menu-vertical-demo"
+background-color="#292c33"
+text-color="#fff"
+default-active="0"
+active-text-color="#FFF" v-show="TalkList.length>0">
+<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
+<div class="option-l">
+<el-avatar shape="square" :size="42" :src="item.squareUrl">
+<img :src="squareUrl"/>
+</el-avatar>
+</div>
+<div class="option-r">
+<div class="option-line">
+<div class="dialog-title">
+<div class="dialog-name">{{item.uName}}</div>
+</div>
+<div class="last-time">{{item.lastTime}}</div>
+</div>
+<div class="option-line">
+<div class="last-msg">
+<span class="last-msg-quot"></span>
+<span class="last-msg-text">{{item.lastText}}</span>
+</div>
+<div class="new-count" v-show="item.newCount!==0">{{item.newCount}}</div>
+</div>
+</div>
+</el-menu-item>
+</el-menu>
+<div class="scroll-empty" v-show="TalkList.length===0">暂时没有新的会话</div>
+</div>
+<div v-show="activeName==='second'">
+<el-menu
+background-color="#292c33"
+text-color="#fff"
+default-active="0"
+active-text-color="#FFF">
+<el-menu-item-group v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
+<template slot="title" class="contact-slice">{{item.slice}}</template>
+<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
+<div class="option-l">
+<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+<img :src="squareUrl"/>
+</el-avatar>
+</div>
+<div class="option-r">
+<div class="option-line">
+<div class="dialog-title">{{info.uName}}</div>
+</div>
+</div>
+</el-menu-item>
+</el-menu-item-group>
+</el-menu>
+</div>
+<div v-show="activeName==='three'">
+<el-menu
+background-color="#292c33"
+text-color="#fff"
+default-active="0"
+active-text-color="#FFF">
+<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
+<template slot="title" class="contact-slice">{{item.slice}}</template>
+<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
+<div class="option-l">
+<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.squareUrl">
+<img :src="squareUrl"/>
+</el-avatar>
+</div>
+<div class="option-r">
+<div class="option-line">
+<div class="dialog-title">{{info.uName}}</div>
+</div>
+</div>
+</el-menu-item>
+</el-menu-item-group>
+</el-menu>
+</div>
+</div>
+</div>
+<el-main>
+<div class="main-inner-r" v-show="activeName==='first'">
+<div class="inner-r-default" v-if="Object.values(this.Talkinfo).join('') === ''">
+<div class="tips">
+<i class="app-icon-bag i-logo3"></i>
+<div>未选择聊天</div>
+</div>
+</div>
+<div v-else class="chat-box">
+<div class="contact-header">
+<div>{{Talkinfo.uName}}</div>
+</div>
+<!--<div class="contact-header" v-if="Talkinfo.type==='friends'">
+<div>{{Talkinfo.uName}}</div>
+</div>
+<header class="chat-header j-chat-header" v-else-if="Talkinfo.type==='groups'" @click="showmember">
+<div class="dialog-title">{{Talkinfo.uName}}</div>
+<div class="dialog-extend">({{Talkinfo.member.length}})</div>
+<i class="member-status down"></i>
+</header>-->
+<div class="chat-body">
+<div class="message-list-scroll">
+<div class="chat-tips">
+<div class="tips-info">
+<i class="app-icon-bag i-lock"></i>
+<span>此对话中所发送的信息都已进行端到端的加密</span>
+</div>
+</div>
+<div class="message-empty" v-if="Talkinfo.list.length===0">暂时没有新消息</div>
+<div class="message-list" v-else>
+<div v-for="(item,index) in Talkinfo.list" :key = "index">
+<div :data-index="item.msgType" class="msg j-msg msg-system mt24" v-if="item.msgType===1">
+<div class="message-info">{{item.time}}</div>
+</div>
+<div :data-index="item.msgType" class="msg j-msg msg-chat message-out" v-else-if="item.msgType===2">
+<div class="message-detail-b">
+<div class="message-main j-message-main">
+<div class="message-info blue">
+<div class="message-info-text"><span v-html="item.msg"></span></div>
+</div>
+<div class="message-status"></div>
+</div>
+</div>
+<div class="message-detail-s">
+<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+<img :src="squareUrl"/>
+</el-avatar>
+</div>
+</div>
+<div :data-index="item.msgType" class="msg j-msg msg-chat" v-else-if="item.msgType===3">
+<div class="message-detail-s">
+<el-avatar shape="square" :size="40" :src="item.squareUrl" class="message-speaker-avatar">
+<img :src="squareUrl"/>
+</el-avatar>
+</div>
+<div class="message-detail-b">
+<div class="message-main j-message-main">
+<div class="message-info">
+<div class="message-info-text"><span v-html="item.msg"></span></div>
+</div>
+<div class="message-status"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="chat-footer">
+<div class="input-field">
+<div class="panel-control">
+<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
+<!--<label class="panel-block app-icon-bag i-file">
+<el-upload
+ref="upload"
+action="https://jsonplaceholder.typicode.com/posts/"
+:show-file-list="false"
+:limit="1">
+<el-button slot="trigger" size="small" type="primary" class="input-file"></el-button>
+</el-upload>
+</label>-->
+<div class="mc" v-show="show_panel" @click="showPanel"></div>
+<div class="emoticon-panel" v-show="show_panel">
+<div class="body">
+<div class="emoticon-content">
+<table class="emoticon-tb">
+<tr v-for="(item,index) in empticon" :key = "index">
+<td v-for="(list,key) in item" :key = "key" @click="checkEmoji(list)"><i data-name="weixiao" class="emoticon-bag" :style="{backgroundImage:'url('+list+')'}"></i></td>
+</tr>
+</table>
+</div>
+<div class="collection-content"></div>
+</div>
+<div class="footer">
+<div class="emoticon-options emoticon emoticon-options_selected"><i class="app-icon-bag i-emo-face"></i></div>
+</div>
+</div>
+</div>
+<div class="input-control">
+<div class="input-container">
+<editor ref="editor" class="input"></editor>
+<div class="m-hide-seat"></div>
+</div>
+</div>
+<div class="button-control">
+<div class="btn-label">按下Shift+Enter换行</div>
+<el-button @click="sendMsg">发送</el-button>
+</div>
+</div>
+</div>
+<!--<div class="mc" v-show="show_member" @click="showmember"></div>
+<div class="member-info" v-show="show_member" v-if="Talkinfo.type==='groups' && Talkinfo.member.length>0">
+<div class="scroll-content">
+<div class="member-list">
+<div style="height: 100px;position: absolute;width: 100%;" v-show="show_Card" @click="showCard"></div>
+<div class="member" v-for="(item, index) in Talkinfo.member" :key="index" @click="showCard1">
+<el-avatar shape="square" :size="55" :src="item.squareUrl" class="user-avatar-second"></el-avatar>
+<p>{{item.name}}</p>
+</div>
+</div>
+</div>
+</div>-->
+</div>
+</div>
+<div class="main-inner-r" v-show="activeName==='second'">
+<div class="contact-info">
+<div class="contact-header">
+<div>查看详情</div>
+</div>
+<div class="contact-body">
+<el-avatar shape="square" :size="100" :src="Friendinfo.squareUrl" class="user-avatar-second">
+<img :src="squareUrl"/>
+</el-avatar>
+<div class="contact-name" v-show="Friendinfo.uName">
+<p>{{Friendinfo.uName}}</p>
+<i class="app-icon-bag i-man" v-if="Friendinfo.sex==1"></i>
+<i class="app-icon-bag i-girl" v-else-if="Friendinfo.sex==2"></i>
+</div>
+<el-button type="primary" class="btn-success" v-show="Friendinfo.uName" @click="createMsg">发送消息</el-button>
+</div>
+</div>
+</div>
+<div class="main-inner-r" v-show="activeName==='three'">
+<div class="contact-info">
+<div class="contact-header">
+<div>查看详情</div>
+</div>
+<div class="contact-body">
+<el-avatar shape="square" :size="100" :src="Groupinfo.squareUrl" class="user-avatar-second">
+<img :src="squareUrl"/>
+</el-avatar>
+<div class="contact-name" v-show="Groupinfo.uName">
+<p>{{Groupinfo.uName}}</p>
+</div>
+<el-button type="primary" class="btn-success" v-show="Groupinfo.uName" @click="createMsg('three')">发送消息</el-button>
+</div>
+</div>
+</div>
+</el-main>
+<div class="user-card" v-show="show_Card" v-if="Talkinfo.type==='groups'" :style="{top: screenY+'px',left: screenX+'px'}">
+<div class="card-content">
+<div class="card-h">
+<el-avatar shape="square" :size="220" :src="squareUrl"></el-avatar>
+</div>
+<div class="card-b">
+<div class="name-area">
+<i class="app-icon-bag i-chat action"></i>
+<p class="nickname">bhjb</p>
+</div>
+</div>
+</div>
+</div>
+</el-container>
+</el-scrollbar>
+</div>
+</template>
+
+<script>
+import editor from '@/components/Editor'
+export default {
+components: {
+editor: editor
+},
+data() {
+return {
+squareUrl: require('../assets/defaultUser.png'),
+meUrl: require('../assets/defaultUser.png'),
+userName: '白犀牛',
+input: '',
+activeName: 'first',
+TalkList: [
+/*{
+    squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+    uName: '白犀牛',
+    lastTime: '16:33',
+    lastText: '111',
+    newCount: 0,
+    list: [
+        {
+            time: '09:41',
+            msgType: 1
+        },
+        {
+            msg: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+            msgType: 2
+        },
+        {
+            msg: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+            msgType: 3
+        }
+    ],
+    type: 'friends'
+},
+{
+    squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+    uName: '测试',
+    lastTime: '16:33',
+    lastText: '111',
+    newCount: 0,
+    list: [
+        {
+            time: '09:41',
+            msgType: 1
+        },
+        {
+            msg: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+            msgType: 2
+        },
+        {
+            msg: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+            msgType: 3
+        }
+    ],
+    type: 'groups',
+    member: [
+        {
+            name: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
+        },
+        {
+            name: 'emmms',
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
+        }
+    ]
+}*/
+],
+Talkinfo: {},
+selectIndex: '',
+FriendList: /*数组字段py 拼音 uName 名称 squareUrl 头像 sex性别 uid发送消息id */
+[
+/*{
+    slice: 'c',
+    info: [
+        {
+            squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+            uName: 'c犀牛',
+            uid: 11031
+        }
+    ]
+}*/
+],
+GroupList: [],
+selectFriend: '',
+selectGroup: '',
+Friendinfo: {},
+Groupinfo: {},
+textarea: '',
+empticon: [],
+show_panel: false,
+editorOption: {
+theme: 'bubble',
+placeholder: '',
+modules: {
+toolbar: {}
+}
+},
+websock: null,
+uName: '',
+uPass: '',
+SocketUrl: '',
+show_member: false,
+show_Card: false,
+screenX: 0,
+screenY: 0,
+mUid: ''
+}
+},
+sockets: {
+chatevent(data) { //监听message事件，方法是后台定义和提供的
+console.log(data)
+}
+},
+methods: {
+handleClick(e) {
+this.activeName = e
+},
+talkClick(e) {
+this.selectIndex = e
+this.TalkList[e].newCount = 0
+this.Talkinfo = this.TalkList[e]
+},
+FriendClick(listindex, index) {
+this.selectFriend = listindex + '-' + index
+this.Friendinfo = this.FriendList[listindex].info[index]
+},
+GroupClick(listindex, index) {
+this.selectGroup = listindex + '-' + index
+this.Groupinfo = this.GroupList[listindex].info[index]
+},
+showPanel() {
+this.show_panel = !this.show_panel
+},
+showmember() {
+this.show_member = !this.show_member
+this.show_Card = false
+},
+showCard() {
+this.show_Card = !this.show_Card
+},
+showCard1(e) {
+this.screenX = e.x
+this.screenY = e.y
+this.show_Card = true
+},
+checkEmoji(e) {
+console.log(e)
+let textarea = this.$refs.editor.getHtml()
+textarea = textarea + "<img src='" + e + "' class='input-emo'>"
+console.log(textarea)
+this.textarea = textarea
+this.init()
+},
+init() {
+this.$refs.editor.setHtml(this.textarea)
+},
+sendMsg() {
+const userInfo = {'type': 'send_msg', 'content': {'phone': this.uName, 'pass': this.uPass, 'userUrl': this.squareUrl, 'userName': this.userName, 'mUid': this.mUid, 'uid': this.Talkinfo.uid, 'msg': this.$refs.editor.getHtml()}}
+console.log(userInfo)
+this.socketApi.sendSock(userInfo, this.websocketonmessage)
+this.textarea = ''
+this.TalkList[0].newCount = 0
+this.init()
+},
+createMsg(e) {
+let info = {}
+let type = ''
+if (e === 'three') {
+info = this.Groupinfo
+type = 'friends'
+} else {
+info = this.Friendinfo
+type = 'groups'
+}
+const Talk =
+{
+squareUrl: info.squareUrl,
+uName: info.uName,
+lastTime: '',
+lastText: '',
+uid: info.uid,
+newCount: 0,
+list: [],
+type: type
+}
+this.selectTalk(Talk)
+},
+selectTalk(data) {
+console.log(this.TalkList)
+if (this.TalkList.length === 0) {
+this.TalkList = [data]
+} else {
+const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
+if (~findIndex) {
+let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+console.log('list', TheFind[0].list)
+TheFind[0].list = TheFind[0].list.concat(data.list)
+console.log('list', TheFind[0].list)
+this.TalkList.splice(findIndex, 1)
+this.TalkList = TheFind.concat(this.TalkList)
+} else {
+const Talk = [data]
+this.TalkList = Talk.concat(this.TalkList)
+}
+}
+console.log(this.TalkList)
+this.selectIndex = 0
+this.Talkinfo = this.TalkList[0]
+this.activeName = 'first'
+},
+initWebSocket() { /*初始化weosocket*/
+this.socketApi.sendSock({'type': 'getList', 'content': {'phone': this.uName, 'pass': this.uPass}}, this.websocketonmessage)
+},
+websocketonmessage(msg) { //数据接收
+const _this = this
+switch (msg.type) {
+case 'push_msg':
+_this.selectTalk(msg.msg_content)
+break
+case 'getList':
+_this.FriendList = msg.user_list.friends
+_this.GroupList = msg.user_list.groups
+_this.mUid = msg.user_list.userid
+break
+case 'send_msg':
+if (msg.msg_info.state === 1) {
+_this.selectTalk({
+squareUrl: '',
+uName: '',
+lastTime: '',
+lastText: '',
+uid: msg.msg_info.push_uid,
+newCount: 0,
+list: [{msg: msg.msg_info.push_msg, squareUrl: _this.meUrl,	msgType: 2}],
+type: 'friends'
+})
+}
+break
+case 'logout':
+_this.websocketclose()
+break
+}
+},
+websocketclose(e) { //关闭
+console.log('connection closed ', e)
+sessionStorage.clear()
+this.$router.push('/Login')
+},
+closesocket() {
+console.log(11)
+const userInfo = {'type': 'logout', 'content': {}}
+this.socketApi.sendSock(userInfo, this.websocketonmessage)
+},
+querySearch(queryString, cb) {
+// 调用 callback 返回建议列表的数据
+let data = []
+switch (this.activeName) {
+case 'first':
+data = this.TalkList.filter((value) => {
+return value.uName.includes(queryString)
+})
+break
+case 'second':
+let info = this.FriendList.map((value) => {
+return value.info
+})
+data = info.reduce((a, b) => { return a.concat(b) })
+data = data.filter((value) => {
+return value.uName.includes(queryString)
+})
+break
+case 'three':
+let tinfo = this.GroupList.map((value) => {
+return value.info
+})
+data = tinfo.reduce((a, b) => { return a.concat(b) })
+data = data.filter((value) => {
+return value.uName.includes(queryString)
+})
+break
+}
+cb(data)
+},
+handleSelect(item) {
+switch (this.activeName) {
+case 'first':
+this.selectTalk(item)
+break
+case 'second':
+// this.FriendClick(listindex,index)
+this.Friendinfo = item
+break
+case 'three':
+this.Groupinfo = item
+break
+}
+}
+},
+destroyed() {
+//页面销毁时关闭长连接
+this.websocketclose()
+},
+mounted() {
+const _this = this
+window.onbeforeunload = function(e) {
+if (_this.$route.fullPath === '/') {
+e = e || window.event
+// 兼容IE8和Firefox 4之前的版本
+if (e) {
+e.returnValue = '关闭提示'
+}
+// Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
+return '关闭提示'
+} else {
+window.onbeforeunload = null
+}
+}
+/*const uName = sessionStorage.getItem('uName')
+const uPass = sessionStorage.getItem('uPass')
+if (uName === null || uPass === null) {
+    this.$router.push('/Login')
+    return false
+}
+this.uName = uName
+this.uPass = uPass
+this.SocketUrl = sessionStorage.getItem('url')*/
+const file = require.context('../assets/empticon/', false, /.png$/).keys()
+var array = Object.values(file.reduce((res, item, index) => {
+const src = require('../assets/empticon/' + item.substring(2))
+res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
+return res
+}, {}))
+console.log(array)
+this.empticon = array
+// this.initWebSocket()
+
+}
+}
+</script>
