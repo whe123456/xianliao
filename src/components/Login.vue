@@ -4,6 +4,10 @@
 			<div class="login-scan">
 				<div class="title">闲聊</div>
 				<div class="scan-area" v-loading="loading">
+					<div class="qr-content timeout status" v-if="visible">
+						<p class="second">二维码失效</p>
+						<el-button type="primary" size="small" @click="getQr">刷新</el-button>
+					</div>
 					<div class="qr-content">
 						<div class="qr">
 							<div id="qrcode"></div>
@@ -34,6 +38,7 @@
 
 <script>
 import QRCode from 'qrcodejs2' // 引入qrcode
+let sha256 = require('js-sha256').sha256
 export default {
 	data() {
 		return {
@@ -50,12 +55,15 @@ export default {
 				]
 			},
 			loading: false,
-			qr: true
+			qr: true,
+			tiemOut: '',
+			visible: false,
+			qrcode: ''
 		}
 	},
 	sockets: {
 		connect() {
-			console.log('socket connected')
+			console.log('connect')
 		},
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
 			if (data.cmd === 1407) {
@@ -67,6 +75,14 @@ export default {
 					confirmButtonText: '确定'
 				})
 			}
+		},
+		disconnect() {
+			console.log(212121)
+			this.$socket.emit('reconnect')
+		},
+		reconnect() {
+			console.log('reconn')
+			this.$socket.emit('connect')
 		}
 	},
 	methods: {
@@ -77,7 +93,7 @@ export default {
 				if (valid) {
 					var obj = {
 						userid: '10926',
-						pass: 'bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a'
+						pass: sha256('111111')
 					}
 					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
 						const info = JSON.parse(e)
@@ -93,7 +109,33 @@ export default {
 		},
 		qrchange() {
 			this.qr = !this.qr
+		},
+		getQr() {
+			const self = this
+			console.log(111)
+			self.$socket.emit('chatevent', {cmd: 1406, data: ''}, function(e) {
+				self.loading = false
+				const data = JSON.parse(e)
+				console.log(data)
+				if (data.state === 1) {
+					document.getElementById('qrcode').innerHTML = ''
+					self.qrcode = new QRCode('qrcode', {
+						width: 266,
+						height: 266,
+						text: data.qr_code, // 二维码地址
+						colorDark: '#000',
+						colorLight: '#fff'
+					})
+					self.visible = false
+					self.tiemOut = setTimeout(function() {
+						self.visible = true
+					}, data.timeOut)
+				}
+			})
 		}
+	},
+	beforeDestroy() {
+		clearTimeout(this.tiemOut)
 	},
 	mounted() {
 		const Login = sessionStorage.getItem('Login')
@@ -102,22 +144,7 @@ export default {
 			this.$router.push('/')
 			return false
 		}
-		const self = this
-		self.$socket.emit('chatevent', {cmd: 1406, data: ''}, function(e) {
-			self.loading = false
-			const data = JSON.parse(e)
-			console.log(data)
-			if (data.state === 1) {
-				let qrcode = new QRCode('qrcode', {
-					width: 266,
-					height: 266,
-					text: data.qr_code, // 二维码地址
-					colorDark: '#000',
-					colorLight: '#fff'
-				})
-				console.log(qrcode)
-			}
-		})
+		this.getQr()
 	}
 }
 </script>
@@ -155,17 +182,34 @@ export default {
 		.login-scan {
 			padding: 54px 38px;
 			text-align: center;
-			.title {
-				font-size: 26px;
-				text-align: left;
-				margin-bottom: 48px;
-			}
-			.qr-content {
+			.scan-area{
 				height: 266px;
 				width: 266px;
 				margin: auto;
 				position: relative;
-				background-color: #e1e1e1;
+				.qr-content {
+					height: 100%;
+					width: 100%;
+					position: relative;
+					background-color: #e1e1e1;
+				}
+				.timeout{
+					position: absolute;
+					z-index: 1;
+					background-color: rgba(0,0,0,0.6);
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					.second{
+						color: #fff;
+						margin-right: 10px;
+					}
+				}
+			}
+			.title {
+				font-size: 26px;
+				text-align: left;
+				margin-bottom: 48px;
 			}
 			.tips-content {
 				margin-top: 44px;

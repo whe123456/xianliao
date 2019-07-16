@@ -35,6 +35,7 @@
         socket.on('disconnect', function () {
             console.log("连接断开了");
             alert('连接断开了');
+            login()
 
         });
         socket.on('chatevent', function (data, ackServerCallback) {
@@ -77,9 +78,10 @@
     }
     function connectWebQr() {
         socket = io.connect('http://192.168.0.136:6821');//
-        socket.on('connect', function () { //连接
             loginQr();
-        });
+        /*socket.on('connect', function () { //连接
+            loginQr();
+        });*/
         addLinstener();
 
     }
@@ -120,6 +122,7 @@
             userid: "10926",
             pass: "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a",
         };
+        console.log(socket)
         var jsonObjectF = {cmd: 1401, data: JSON.stringify(obj)}; //登录命令 1041
         if (socket != null) {
             socket.emit('chatevent', jsonObjectF, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
@@ -132,15 +135,16 @@
      * 登录扫码
      * */
     function loginQr() {
-        var jsonObjectF = {cmd: 1406, data: ""}; //登录命令 1406
+        var jsonObjectF = {cmd: 1402, data: ""}; //登录命令 1406
         if (socket != null) {
             socket.emit('chatevent', jsonObjectF, function (arg1) { //function(arg1,arg2)表示服务端返回的数据
                 var result = JSON.parse(arg1);
-                if (result['state'] == 1) {//成功
+                console.log(result)
+                /*if (result['state'] == 1) {//成功
                     console.log("login qr_code: " + result['qr_code']);//二维码字符串
                 } else {//登录失败
                     console.log("login userinfo: " + result['msg']);
-                }
+                }*/
 
             });
         }

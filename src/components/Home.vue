@@ -433,7 +433,16 @@ export default {
 			console.log(data)
 		},
 		disconnect() {
-			this.websocketclose()
+			this.$socket.emit('reconnect')
+		},
+		reconnect() {
+			const self = this
+			console.log('getQr')
+			sessionStorage.clear()
+			self.$router.push('/Login')
+		},
+		connect() {
+			console.log('socket connected')
 		}
 	},
 	methods: {
@@ -614,6 +623,11 @@ export default {
 			const self = this
 			self.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
 				const data = JSON.parse(e)
+				console.log(data)
+				if (data.state === 0) {
+					self.websocketclose()
+					return
+				}
 				const rData = data.friends.reduce((res, item, index) => {
 					item['py'] = (pinyin(item.nick.substring(0, 1), {
 						style: pinyin.STYLE_FIRST_LETTER
@@ -685,9 +699,11 @@ export default {
 			})
 		},
 		closesocket() {
-			console.log(11)
-			const userInfo = {'type': 'logout', 'content': {}}
-			this.socketApi.sendSock(userInfo, this.websocketonmessage)
+			const _this = this
+			_this.websocketclose()
+			/*this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
+				_this.websocketclose()
+			})*/
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
@@ -734,8 +750,7 @@ export default {
 			}
 		},
 		websocketclose() {
-			// sessionStorage.clear()
-			// this.$router.push('/Login')
+			this.$socket.emit('disconnect', 1)
 		}
 	},
 	destroyed() {
