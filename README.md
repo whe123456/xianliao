@@ -1,4 +1,4 @@
-# xianliao
+# mixin
 
 > A Vue.js project
 
