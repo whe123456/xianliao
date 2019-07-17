@@ -402,6 +402,7 @@ export default {
 	},
 	sockets: {
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
+			const self = this
 			if (data.cmd === 1405) {
 				this.$alert(data.data, '提示', {
 					confirmButtonText: '确定'
@@ -640,10 +641,11 @@ export default {
 				console.log(rData)
 				const friendsData = rData.reduce((res, item) => {
 					const index = res.findIndex(n => n.slice === item['py'])
+					console.log(res)
 					if (~index) {
-						res[item['index']].info.push(item)
+						res[index].info.push(item)
 					} else {
-						res[item['index']] = {
+						res[res.length] = {
 							slice: item['py'],
 							info: [item]
 						}
@@ -663,9 +665,9 @@ export default {
 				const groupsData = gData.reduce((res, item) => {
 					const index = res.findIndex(n => n.slice === item['py'])
 					if (~index) {
-						res[item['index']].info.push(item)
+						res[index].info.push(item)
 					} else {
-						res[item['index']] = {
+						res[res.length] = {
 							slice: item['py'],
 							info: [item]
 						}
@@ -764,6 +766,7 @@ export default {
 				e = e || window.event
 				// 兼容IE8和Firefox 4之前的版本
 				if (e) {
+					_this.websocketclose()
 					e.returnValue = '关闭提示'
 				}
 				// Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+

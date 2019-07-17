@@ -83,6 +83,7 @@ export default {
 		reconnect() {
 			console.log('reconn')
 			this.$socket.emit('connect')
+			this.getQr()
 		}
 	},
 	methods: {
@@ -92,7 +93,7 @@ export default {
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
 					var obj = {
-						userid: '10926',
+						userid: '10925',
 						pass: sha256('111111')
 					}
 					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
@@ -114,6 +115,7 @@ export default {
 			const self = this
 			console.log(111)
 			self.$socket.emit('chatevent', {cmd: 1406, data: ''}, function(e) {
+				console.log(2222)
 				self.loading = false
 				const data = JSON.parse(e)
 				console.log(data)
