@@ -793,7 +793,7 @@ export default {
 		this.initWebSocket()
 		document.onkeydown = function(e) {
 			const key = e.keyCode
-			if (key && !e.shiftKey) {
+			if (key === 13 && !e.shiftKey) {
 				_this.sendMsg()
 			}
 		}
