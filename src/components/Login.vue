@@ -37,6 +37,7 @@
 </template>
 
 <script>
+import {Decrypt, Encrypt} from '@/util/aes.js'
 import QRCode from 'qrcodejs2' // 引入qrcode
 let sha256 = require('js-sha256').sha256
 export default {
@@ -67,11 +68,12 @@ export default {
 		},
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
 			if (data.cmd === 1407) {
-				const info = JSON.parse(data.data)
+				const info = Decrypt(data.data)
 				sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 				this.$router.push('/')
 			} else if (data.cmd === 1405) {
-				this.$alert(data.data, '提示', {
+				const info = Decrypt(data.data)
+				this.$alert(info, '提示', {
 					confirmButtonText: '确定'
 				})
 			}
@@ -92,15 +94,23 @@ export default {
 			this.loading = true
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
-					var obj = {
+					console.log(valid)
+					/*var obj = {
 						userid: '10925',
 						pass: sha256('111111')
-					}
-					self.$socket.emit('chatevent', {cmd: 1401, data: JSON.stringify(obj)}, function(e) {
-						const info = JSON.parse(e)
-						sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
+					}*/
+					var obj = Encrypt({userid: self.ruleForm.username, pass: sha256(self.ruleForm.password)})
+					self.$socket.emit('chatevent', {cmd: 1401, data: obj}, function(e) {
+						const info = Decrypt(e)
 						self.loading = false
-						self.$router.push('/')
+						if (info.state === 1) {
+							sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
+							self.$router.push('/')
+						} else {
+							self.$alert(info.msg, '提示', {
+								confirmButtonText: '确定'
+							})
+						}
 					})
 				} else {
 					console.log('error submit!!')
@@ -114,10 +124,9 @@ export default {
 		getQr() {
 			const self = this
 			console.log(111)
-			self.$socket.emit('chatevent', {cmd: 1406, data: ''}, function(e) {
-				console.log(2222)
+			self.$socket.emit('chatevent', {cmd: 1406, data: Encrypt('')}, function(e) {
 				self.loading = false
-				const data = JSON.parse(e)
+				const data = Decrypt(e)
 				console.log(data)
 				if (data.state === 1) {
 					document.getElementById('qrcode').innerHTML = ''

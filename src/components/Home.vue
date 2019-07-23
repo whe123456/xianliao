@@ -211,7 +211,7 @@
 									</div>
 									<div class="input-control">
 										<div class="input-container">
-											<editor ref="editor" class="input"></editor>
+											<editor ref="editor" class="input" @keyup.enter="sendMsg"></editor>
 											<div class="m-hide-seat"></div>
 										</div>
 									</div>
@@ -290,6 +290,7 @@
 
 <script>
 import editor from '@/components/Editor'
+import {Decrypt, Encrypt} from '@/util/aes.js'
 const pinyin = require('pinyin')
 export default {
 	components: {
@@ -404,11 +405,12 @@ export default {
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
 			const self = this
 			if (data.cmd === 1405) {
-				this.$alert(data.data, '提示', {
+				const info = Decrypt(data.data)
+				this.$alert(info, '提示', {
 					confirmButtonText: '确定'
 				})
 			} else if (data.cmd === 1403) {
-				const tbData = JSON.parse(data.data)
+				const tbData = Decrypt(data.data)
 				tbData.forEach((item) => {
 					let msgType = 3
 					if (self.mUid !== item.to_uid) {
@@ -500,6 +502,9 @@ export default {
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
 			}
+			if (this.activeName !== 'first') {
+				return
+			}
 			const self = this
 			var obj = {
 				from_uid: this.mUid, //我自己的uid
@@ -510,8 +515,8 @@ export default {
 				body: body, //文字信息内容
 				file_url: '' //非文字内容的资源地址（如：图片或视频，需要传这个）
 			}
-			self.$socket.emit('chatevent', {cmd: 1403, data: JSON.stringify(obj)}, function(e) {
-				const info = JSON.parse(e)
+			self.$socket.emit('chatevent', {cmd: 1403, data: Encrypt(obj)}, function(e) {
+				const info = Decrypt(e)
 				if (info['state'] === 1) {
 					self.textarea = ''
 					self.TalkList[0].newCount = 0
@@ -622,8 +627,8 @@ export default {
 			}, {}))
 			this.empticon = array
 			const self = this
-			self.$socket.emit('chatevent', {cmd: 1404, data: ''}, function(e) {
-				const data = JSON.parse(e)
+			self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
+				const data = Decrypt(e)
 				console.log(data)
 				if (data.state === 0) {
 					self.websocketclose()
@@ -786,6 +791,12 @@ export default {
 		this.meUrl = LoginData.head_url
 		this.mUid = LoginData.userid
 		this.initWebSocket()
+		document.onkeydown = function(e) {
+			const key = e.keyCode
+			if (key && !e.shiftKey) {
+				_this.sendMsg()
+			}
+		}
 	}
 }
 </script>
