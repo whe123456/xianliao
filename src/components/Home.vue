@@ -28,86 +28,88 @@
 								<i class="el_icon_select" :class="{ contact: activeName!=='second', contact2: activeName==='second' }"></i>
 							</li>
 							<li class="list-type-option" @click="handleClick('three')">
-								<i class="el_icon_select" :class="{ contact: activeName!=='three', contact2: activeName==='three' }"></i>
+								<i class="el_icon_select" :class="{ contact3: activeName!=='three', contact4: activeName==='three' }"></i>
 							</li>
 						</ul>
-						<div class="friendList" v-show="activeName==='first'">
-							<el-menu
-							class="el-menu-vertical-demo"
-							background-color="#292c33"
-							text-color="#fff"
-							default-active="0"
-							active-text-color="#FFF" v-show="TalkList.length>0">
-								<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
-									<div class="option-l">
-										<el-avatar shape="square" :size="42" :src="item.head_url">
-											<img :src="squareUrl"/>
-										</el-avatar>
-									</div>
-									<div class="option-r">
-										<div class="option-line">
-											<div class="dialog-title">
-												<div class="dialog-name">{{item.nick}}</div>
-											</div>
-											<div class="last-time">{{item.lastTime}}</div>
-										</div>
-										<div class="option-line">
-											<div class="last-msg">
-												<span class="last-msg-quot"></span>
-												<span class="last-msg-text">{{item.lastText}}</span>
-											</div>
-											<div class="new-count" v-show="item.newCount!==0">{{item.newCount}}</div>
-										</div>
-									</div>
-								</el-menu-item>
-							</el-menu>
-							<div class="scroll-empty" v-show="TalkList.length===0">暂时没有新的会话</div>
-						</div>
-						<div class="friendList" v-show="activeName==='second'">
-							<el-menu
+						<div class="friendList">
+							<div v-show="activeName==='first'">
+								<el-menu
+								class="el-menu-vertical-demo"
 								background-color="#292c33"
 								text-color="#fff"
 								default-active="0"
-								active-text-color="#FFF">
-								<el-menu-item-group v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
-									<template slot="title" class="contact-slice">{{item.slice}}</template>
-									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
+								active-text-color="#FFF" v-show="TalkList.length>0">
+									<el-menu-item v-for="(item, index) in TalkList" :index="index.toString()" class="session-options" :class="{ selected: selectIndex===index}" @click="talkClick(index)" :key = "index">
 										<div class="option-l">
-											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
+											<el-avatar shape="square" :size="42" :src="item.head_url">
 												<img :src="squareUrl"/>
 											</el-avatar>
 										</div>
 										<div class="option-r">
 											<div class="option-line">
-												<div class="dialog-title">{{info.nick}}</div>
+												<div class="dialog-title">
+													<div class="dialog-name">{{item.nick}}</div>
+												</div>
+												<div class="last-time">{{item.lastTime}}</div>
 											</div>
-										</div>
-									</el-menu-item>
-								</el-menu-item-group>
-							</el-menu>
-						</div>
-						<div class="friendList" v-show="activeName==='three'">
-							<el-menu
-								background-color="#292c33"
-								text-color="#fff"
-								default-active="0"
-								active-text-color="#FFF">
-								<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
-									<template slot="title" class="contact-slice">{{item.slice}}</template>
-									<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
-										<div class="option-l">
-											<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
-												<img :src="squareUrl"/>
-											</el-avatar>
-										</div>
-										<div class="option-r">
 											<div class="option-line">
-												<div class="dialog-title">{{info.nick}}</div>
+												<div class="last-msg">
+													<span class="last-msg-quot"></span>
+													<span class="last-msg-text">{{item.lastText}}</span>
+												</div>
+												<div class="new-count" v-show="item.newCount!==0">{{item.newCount}}</div>
 											</div>
 										</div>
 									</el-menu-item>
-								</el-menu-item-group>
-							</el-menu>
+								</el-menu>
+								<div class="scroll-empty" v-show="TalkList.length===0">暂时没有新的会话</div>
+							</div>
+							<div v-show="activeName==='second'">
+								<el-menu
+									background-color="#292c33"
+									text-color="#fff"
+									default-active="0"
+									active-text-color="#FFF">
+									<el-menu-item-group v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
+										<template slot="title" class="contact-slice">{{item.slice}}</template>
+										<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
+											<div class="option-l">
+												<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
+													<img :src="squareUrl"/>
+												</el-avatar>
+											</div>
+											<div class="option-r">
+												<div class="option-line">
+													<div class="dialog-title">{{info.nick}}</div>
+												</div>
+											</div>
+										</el-menu-item>
+									</el-menu-item-group>
+								</el-menu>
+							</div>
+							<div v-show="activeName==='three'">
+								<el-menu
+									background-color="#292c33"
+									text-color="#fff"
+									default-active="0"
+									active-text-color="#FFF">
+									<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
+										<template slot="title" class="contact-slice">{{item.slice}}</template>
+										<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
+											<div class="option-l">
+												<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
+													<img :src="squareUrl"/>
+												</el-avatar>
+											</div>
+											<div class="option-r">
+												<div class="option-line">
+													<div class="dialog-title">{{info.nick}}</div>
+												</div>
+											</div>
+										</el-menu-item>
+									</el-menu-item-group>
+								</el-menu>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -181,7 +183,7 @@
 							</div>
 							<div class="chat-footer">
 								<div class="input-field">
-									<div class="panel-control">
+									<div class="panel-control" @click="focusEditor">
 										<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
 										<!--<label class="panel-block app-icon-bag i-file">
 											<el-upload
@@ -209,7 +211,7 @@
 											</div>
 										</div>
 									</div>
-									<div class="input-control">
+									<div class="input-control" @click="focusEditor">
 										<div class="input-container">
 											<editor ref="editor" class="input" @keyup.enter="sendMsg"></editor>
 											<div class="m-hide-seat"></div>
@@ -328,7 +330,8 @@ export default {
 			show_Card: false,
 			screenX: 0,
 			screenY: 0,
-			mUid: ''
+			mUid: '',
+			TalkClick: 0
 		}
 	},
 	sockets: {
@@ -360,7 +363,8 @@ export default {
 						groupId: item.group_id,
 						newCount: tbData.length,
 						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
-						type: type
+						type: type,
+						editor: ''
 					})
 				})
 			}
@@ -371,7 +375,8 @@ export default {
 		},
 		reconnect() {
 			const self = this
-			console.log('getQr')
+			this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
+			})
 			sessionStorage.clear()
 			self.$router.push('/Login')
 		},
@@ -384,9 +389,19 @@ export default {
 			this.activeName = e
 		},
 		talkClick(e) {
+			let body = this.$refs.editor.getHtml().replace('<p>', '')
+			body = body.replace('</p>', '')
+			body = body.replace('<br>', '')
+			this.TalkList[this.TalkClick].editor = body
 			this.selectIndex = e
 			this.TalkList[e].newCount = 0
 			this.Talkinfo = this.TalkList[e]
+			this.TalkClick = e
+			this.$refs.editor.setHtml(this.TalkList[e].editor)
+			this.focusEditor()
+		},
+		focusEditor() {
+			this.$refs.editor.setFocus()
 		},
 		FriendClick(listindex, index) {
 			this.selectFriend = listindex + '-' + index
@@ -461,7 +476,8 @@ export default {
 						groupId: self.Talkinfo.groupId,
 						newCount: 0,
 						list: [{msg: body, head_url: self.meUrl, msgType: 2}],
-						type: self.Talkinfo.type
+						type: self.Talkinfo.type,
+						editor: ''
 					})
 				}
 			})
@@ -490,7 +506,8 @@ export default {
 					groupId: groupId,
 					newCount: 0,
 					list: [],
-					type: type
+					type: type,
+					editor: ''
 				}
 			this.selectTalk(Talk)
 		},
@@ -533,13 +550,22 @@ export default {
 				}
 			}
 			console.log('talkList', this.TalkList)
+			const self = this
 			if (this.TalkList.length === 0) {
 				this.TalkList = [data]
 			} else {
+				let body = self.$refs.editor.getHtml().replace('<p>', '')
+				body = body.replace('</p>', '')
+				body = body.replace('<br>', '')
+				self.TalkList[self.TalkClick].editor = body
+				self.$refs.editor.setHtml('')
 				if (data.type === 'friends') {
 					const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+						TheFind[0].lastTime = data.lastTime
+						TheFind[0].lastText = data.lastText
+						TheFind[0].newCount = TheFind[0].newCount + 1
 						TheFind[0].list = TheFind[0].list.concat(data.list)
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
@@ -551,6 +577,9 @@ export default {
 					const findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
+						TheFind[0].lastTime = data.lastTime
+						TheFind[0].lastText = data.lastText
+						TheFind[0].newCount = TheFind[0].newCount + 1
 						TheFind[0].list = TheFind[0].list.concat(data.list)
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
@@ -564,6 +593,10 @@ export default {
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
+			self.tiemOut = setTimeout(function() {
+				self.$refs.editor.setHtml(self.TalkList[0].editor)
+				self.$refs.editor.setFocus()
+			}, 1)
 		},
 		initWebSocket() { /*初始化weosocket*/
 			/*const file = require.context('../assets/empticon/', false, /.png$/).keys()
@@ -656,7 +689,8 @@ export default {
 						groupId: item.group_id,
 						newCount: tbData.length,
 						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
-						type: type
+						type: type,
+						editor: ''
 					})
 				})*/
 			})
@@ -664,9 +698,6 @@ export default {
 		closesocket() {
 			const _this = this
 			_this.websocketclose()
-			this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
-				_this.websocketclose()
-			})
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
@@ -1371,6 +1402,14 @@ export default {
 			width: 28px;
 			background: url("../assets/contact2.png") 100% no-repeat;
 		}
+		/deep/.contact3{
+			width: 28px;
+			background: url("../assets/contact4.png") 100% no-repeat;
+		}
+		/deep/.contact4{
+			width: 28px;
+			background: url("../assets/contact3.png") 100% no-repeat;
+		}
 	}
 	.session-options{
 		display: flex;
@@ -1622,6 +1661,11 @@ export default {
 		}
 		.el-main {
 			width: 71.2%;
+		}
+	}
+	@media screen and (max-height: 690px) and (min-height: 450px) {
+		.app_main {
+			height: 450px;
 		}
 	}
 	@media screen and (max-height: 841px) and (min-height: 690px) {

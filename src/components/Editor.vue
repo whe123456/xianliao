@@ -45,6 +45,9 @@ export default {
 		},
 		setHtml(txt) {
 			this.editor.txt.html(txt)
+		},
+		setFocus() {
+			this.editor.$textElem.focus()
 		}
 	},
 	mounted() {
@@ -58,6 +61,7 @@ export default {
 	/deep/ .w-e-text-container{
 		border: none !important;
 		height: auto !important;
+		min-height: 40px;
 	}
 	/deep/ .w-e-toolbar{
 		display: none;
