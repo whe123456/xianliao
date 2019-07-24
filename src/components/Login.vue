@@ -83,9 +83,8 @@ export default {
 			this.$socket.emit('reconnect')
 		},
 		reconnect() {
-			console.log('reconn')
-			this.$socket.emit('connect')
-			this.getQr()
+			console.log(212121)
+			this.$router.go(0)
 		}
 	},
 	methods: {

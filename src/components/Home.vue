@@ -31,7 +31,7 @@
 								<i class="el_icon_select" :class="{ contact: activeName!=='three', contact2: activeName==='three' }"></i>
 							</li>
 						</ul>
-						<div v-show="activeName==='first'">
+						<div class="friendList" v-show="activeName==='first'">
 							<el-menu
 							class="el-menu-vertical-demo"
 							background-color="#292c33"
@@ -63,7 +63,7 @@
 							</el-menu>
 							<div class="scroll-empty" v-show="TalkList.length===0">暂时没有新的会话</div>
 						</div>
-						<div v-show="activeName==='second'">
+						<div class="friendList" v-show="activeName==='second'">
 							<el-menu
 								background-color="#292c33"
 								text-color="#fff"
@@ -86,7 +86,7 @@
 								</el-menu-item-group>
 							</el-menu>
 						</div>
-						<div v-show="activeName==='three'">
+						<div class="friendList" v-show="activeName==='three'">
 							<el-menu
 								background-color="#292c33"
 								text-color="#fff"
@@ -303,81 +303,11 @@ export default {
 			userName: '白犀牛',
 			input: '',
 			activeName: 'first',
-			TalkList: [
-				/*{
-					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-					nick: '白犀牛',
-					lastTime: '16:33',
-					lastText: '111',
-					newCount: 0,
-					list: [
-						{
-							time: '09:41',
-							msgType: 1
-						},
-						{
-							msg: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							msgType: 2
-						},
-						{
-							msg: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							msgType: 3
-						}
-					],
-					type: 'friends'
-				},
-				{
-					squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-					nick: '测试',
-					lastTime: '16:33',
-					lastText: '111',
-					newCount: 0,
-					list: [
-						{
-							time: '09:41',
-							msgType: 1
-						},
-						{
-							msg: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							msgType: 2
-						},
-						{
-							msg: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							msgType: 3
-						}
-					],
-					type: 'groups',
-					member: [
-						{
-							name: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
-						},
-						{
-							name: 'emmms',
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png'
-						}
-					]
-				}*/
-			],
+			TalkList: [],
 			Talkinfo: {},
 			selectIndex: '',
 			FriendList: /*数组字段py 拼音 nick 名称 squareUrl 头像 sex性别 uid发送消息id */
-			[
-				/*{
-					slice: 'c',
-					info: [
-						{
-							squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
-							nick: 'c犀牛',
-							uid: 11031
-						}
-					]
-				}*/
-			],
+			[],
 			GroupList: [],
 			selectFriend: '',
 			selectGroup: '',
@@ -426,6 +356,7 @@ export default {
 						lastTime: item.create_ts,
 						lastText: item.body,
 						uid: item.to_uid,
+						from_uid: item.from_uid,
 						groupId: item.group_id,
 						newCount: tbData.length,
 						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
@@ -576,7 +507,9 @@ export default {
 					})
 				} else {
 					this.FriendList.forEach((value) => {
+						console.log('value', value.info)
 						const findinfo = value.info.find(n => n.uid === data.uid)
+						console.log(findinfo)
 						if (typeof findinfo !== 'undefined') {
 							info = findinfo
 						}
@@ -589,7 +522,7 @@ export default {
 			} else {
 				let info = ''
 				this.GroupList.forEach((value) => {
-					const findinfo = value.info.find(n => n.uid === data.uid)
+					const findinfo = value.info.find(n => n.group_id === data.groupId)
 					if (typeof findinfo !== 'undefined') {
 						info = findinfo
 					}
@@ -599,18 +532,32 @@ export default {
 					data.nick = info.nick
 				}
 			}
+			console.log('talkList', this.TalkList)
 			if (this.TalkList.length === 0) {
 				this.TalkList = [data]
 			} else {
-				const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
-				if (~findIndex) {
-					let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
-					TheFind[0].list = TheFind[0].list.concat(data.list)
-					this.TalkList.splice(findIndex, 1)
-					this.TalkList = TheFind.concat(this.TalkList)
+				if (data.type === 'friends') {
+					const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
+					if (~findIndex) {
+						let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+						TheFind[0].list = TheFind[0].list.concat(data.list)
+						this.TalkList.splice(findIndex, 1)
+						this.TalkList = TheFind.concat(this.TalkList)
+					} else {
+						const Talk = [data]
+						this.TalkList = Talk.concat(this.TalkList)
+					}
 				} else {
-					const Talk = [data]
-					this.TalkList = Talk.concat(this.TalkList)
+					const findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
+					if (~findIndex) {
+						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
+						TheFind[0].list = TheFind[0].list.concat(data.list)
+						this.TalkList.splice(findIndex, 1)
+						this.TalkList = TheFind.concat(this.TalkList)
+					} else {
+						const Talk = [data]
+						this.TalkList = Talk.concat(this.TalkList)
+					}
 				}
 			}
 			console.log(this.TalkList)
@@ -619,13 +566,12 @@ export default {
 			this.activeName = 'first'
 		},
 		initWebSocket() { /*初始化weosocket*/
-			const file = require.context('../assets/empticon/', false, /.png$/).keys()
+			/*const file = require.context('../assets/empticon/', false, /.png$/).keys()
 			var array = Object.values(file.reduce((res, item, index) => {
 				const src = require('../assets/empticon/' + item.substring(2))
 				res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
 				return res
-			}, {}))
-			this.empticon = array
+			}, {}))*/
 			const self = this
 			self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
 				const data = Decrypt(e)
@@ -657,7 +603,12 @@ export default {
 					}
 					return res
 				}, [])
-				self.FriendList = friendsData
+				self.FriendList = friendsData.sort((x, y) => {
+					if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
+						return 1
+					}
+					return -1
+				})
 				const gData = data.groups.reduce((res, item, index) => {
 					item['py'] = (pinyin(item.title.substring(0, 1), {
 						style: pinyin.STYLE_FIRST_LETTER
@@ -679,8 +630,13 @@ export default {
 					}
 					return res
 				}, [])
-				self.GroupList = groupsData
-				/*const tbData = JSON.parse('[{"at_list":"[]","body":"官方分","file_url":"","body_id":389,"create_ts":"2019-07-12 13:29:53","file_time":0,"from_create_app":0,"from_uid":10926,"group_id":0,"is_group":0,"is_sync":0,"is_systemmsg":0,"is_web_receive":0,"message_type":0,"sign":"111701562909365775","state":0,"to_uid":10925,"type":0,"upload_id":0}]')
+				self.GroupList = groupsData.sort((x, y) => {
+					if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
+						return 1
+					}
+					return -1
+				})
+				/*const tbData = Decrypt('ehVdoN88KWFB+Mga9L8xOy5D2yVg0m7C7u4kf2qsfHnWOTPItpKi5dabxjiadkmUARXLSl/hwLQLN0NSqRcUbwVwcKKlmlHK51Yf+Ar3DvxjRSx2feKnFmbXZBTq3QwelQMp/nHpdst5rGHaO81YaIeqC5YpQ3xNFjF5yinM0TyeQtoY2Ujn0sUTnOOTJ1gNOg4ucGOwpsJtWNALkvRW54k0QfePkB1JjDPL+JUjoqgn7J9m0iCV/sz5xEMJY2+I7NNge5TjV8MoGbmfynANFu0oHAHWyfpk2vzb3rzHlwllT7lup4S/9/oJ2OSmNBCePseflgH1OqKoFg7NSFrYP/P+Z2zbeOsDFr8lFLfVC5YYv8/M90HP9tvG+hOoH3eB2jK7h5mmW7Djv2VwLSkn+g==')
 				tbData.forEach((item) => {
 					let msgType = 3
 					if (self.mUid !== item.to_uid) {
@@ -708,9 +664,9 @@ export default {
 		closesocket() {
 			const _this = this
 			_this.websocketclose()
-			/*this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
+			this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
 				_this.websocketclose()
-			})*/
+			})
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
@@ -766,16 +722,21 @@ export default {
 	},
 	mounted() {
 		const _this = this
+		/* eslint-disable */
+		_this.empticon = emojiList
+		/* eslint-enable */
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
-				e = e || window.event
+				/*e = e || window.event
+				console.log(e)
 				// 兼容IE8和Firefox 4之前的版本
 				if (e) {
 					_this.websocketclose()
 					e.returnValue = '关闭提示'
 				}
 				// Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
-				return '关闭提示'
+				return '关闭提示'*/
+				_this.websocketclose()
 			} else {
 				window.onbeforeunload = null
 			}
@@ -791,6 +752,7 @@ export default {
 		this.meUrl = LoginData.head_url
 		this.mUid = LoginData.userid
 		this.initWebSocket()
+
 		document.onkeydown = function(e) {
 			const key = e.keyCode
 			if (key === 13 && !e.shiftKey) {
@@ -1339,6 +1301,7 @@ export default {
 		flex: 1 1 auto;
 		width: 100%;
 		overflow: hidden;
+		height: calc(100% - 72px);
 		.m-search {
 			margin: 0 18px;
 			padding: 0;
@@ -1375,6 +1338,19 @@ export default {
 		}
 		.el-menu{
 			border: none;
+		}
+		.friendList{
+			height: calc(100% - 78px);
+			overflow-x: hidden;
+			overflow-y: scroll;
+		}
+
+		.friendList::-webkit-scrollbar{
+			width:6px;
+			height: 8px;
+		}
+		.friendList::-webkit-scrollbar-thumb{
+			background-color:rgba(0,0,0,.4);
 		}
 	}
 	.el_icon_select{
@@ -1587,7 +1563,6 @@ export default {
 		background-color: #fff;
 		border-radius: 4px;
 		overflow: hidden;
-		z-index: 20;
 		z-index: 1000;
 		.card-b {
 			padding: 20px;
