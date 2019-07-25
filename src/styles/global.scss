@@ -63,3 +63,17 @@ table {
 	min-width: 900px;
 	background: url(../assets/app-bg.jpg) 100% no-repeat;
 }
+.i-error {
+	display: inline-block;
+	height: 20px;
+	width: 20px;
+	background-size: 100%;
+	background-image: url("../assets/error.png");
+}
+.app-icon-bag.i-waiting {
+	display: inline-block;
+	height: 20px;
+	width: 20px;
+	background-size: 100%;
+	background-image: url("../assets/waiting.gif");
+}

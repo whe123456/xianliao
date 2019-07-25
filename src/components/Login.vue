@@ -137,6 +137,7 @@ export default {
 						colorLight: '#fff'
 					})
 					self.visible = false
+					document.getElementById('qrcode').title = ''
 					self.tiemOut = setTimeout(function() {
 						self.visible = true
 					}, data.timeOut)

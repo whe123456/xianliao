@@ -133,7 +133,7 @@
 								<div class="dialog-extend">({{Talkinfo.member.length}})</div>
 								<i class="member-status down"></i>
 							</header>-->
-							<div class="chat-body">
+							<div class="chat-body" id="chat-body">
 								<div class="message-list-scroll">
 									<div class="chat-tips">
 										<div class="tips-info">
@@ -153,7 +153,10 @@
 														<div class="message-info blue">
 															<div class="message-info-text"><span v-html="item.msg"></span></div>
 														</div>
-														<div class="message-status"></div>
+														<div class="message-status">
+															<!--<i class="app-icon-bag i-waiting" v-show="wait && index === (Talkinfo.list.length-1)"></i>-->
+															<i class="app-icon-bag i-waiting" v-show="item.wait"></i>
+														</div>
 													</div>
 												</div>
 												<div class="message-detail-s">
@@ -331,7 +334,8 @@ export default {
 			screenX: 0,
 			screenY: 0,
 			mUid: '',
-			TalkClick: 0
+			TalkClick: 0,
+			wait: false
 		}
 	},
 	sockets: {
@@ -364,7 +368,8 @@ export default {
 						newCount: tbData.length,
 						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
 						type: type,
-						editor: ''
+						editor: '',
+						msgType: 3
 					})
 				})
 			}
@@ -461,24 +466,28 @@ export default {
 				body: body, //文字信息内容
 				file_url: '' //非文字内容的资源地址（如：图片或视频，需要传这个）
 			}
+			self.wait = true
+			self.init()
+			self.textarea = ''
+			self.TalkList[0].newCount = 0
+			const length = self.selectTalk({
+				head_url: self.Talkinfo.head_url,
+				nick: self.Talkinfo.nick,
+				lastTime: '',
+				lastText: '',
+				uid: self.Talkinfo.uid,
+				groupId: self.Talkinfo.groupId,
+				newCount: 0,
+				list: [{msg: body, head_url: self.meUrl, msgType: 2, wait: true}],
+				type: self.Talkinfo.type,
+				editor: '',
+				wait: true
+			})
 			self.$socket.emit('chatevent', {cmd: 1403, data: Encrypt(obj)}, function(e) {
 				const info = Decrypt(e)
 				if (info['state'] === 1) {
-					self.textarea = ''
-					self.TalkList[0].newCount = 0
-					self.init()
-					self.selectTalk({
-						head_url: self.Talkinfo.head_url,
-						nick: self.Talkinfo.nick,
-						lastTime: '',
-						lastText: '',
-						uid: self.Talkinfo.uid,
-						groupId: self.Talkinfo.groupId,
-						newCount: 0,
-						list: [{msg: body, head_url: self.meUrl, msgType: 2}],
-						type: self.Talkinfo.type,
-						editor: ''
-					})
+					self.wait = false
+					self.TalkList[0].list[length].wait = false
 				}
 			})
 		},
@@ -549,8 +558,14 @@ export default {
 					data.nick = info.nick
 				}
 			}
+			let msgType = 2
+			if (data.hasOwnProperty('msgType')) {
+				msgType = data.msgType
+				delete data.msgType
+			}
 			console.log('talkList', this.TalkList)
 			const self = this
+			let length = 0
 			if (this.TalkList.length === 0) {
 				this.TalkList = [data]
 			} else {
@@ -559,14 +574,24 @@ export default {
 				body = body.replace('<br>', '')
 				self.TalkList[self.TalkClick].editor = body
 				self.$refs.editor.setHtml('')
+				let wait = false
+				if (data.hasOwnProperty('wait')) {
+					wait = data.wait
+					delete data.wait
+				}
 				if (data.type === 'friends') {
 					const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
-						TheFind[0].lastTime = data.lastTime
-						TheFind[0].lastText = data.lastText
-						TheFind[0].newCount = TheFind[0].newCount + 1
+						if (msgType === 3) {
+							TheFind[0].lastTime = data.lastTime
+							TheFind[0].lastText = data.lastText
+							TheFind[0].newCount = TheFind[0].newCount + 1
+						}
 						TheFind[0].list = TheFind[0].list.concat(data.list)
+						if (wait) {
+							length = TheFind[0].list.length - 1
+						}
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
 					} else {
@@ -577,10 +602,15 @@ export default {
 					const findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
-						TheFind[0].lastTime = data.lastTime
-						TheFind[0].lastText = data.lastText
-						TheFind[0].newCount = TheFind[0].newCount + 1
+						if (msgType === 3) {
+							TheFind[0].lastTime = data.lastTime
+							TheFind[0].lastText = data.lastText
+							TheFind[0].newCount = TheFind[0].newCount + 1
+						}
 						TheFind[0].list = TheFind[0].list.concat(data.list)
+						if (wait) {
+							length = TheFind[0].list.length - 1
+						}
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
 					} else {
@@ -593,10 +623,16 @@ export default {
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
+			this.$nextTick(() => {
+				var div = document.getElementById('chat-body')
+				div.scrollTop = div.scrollHeight
+			})
+
 			self.tiemOut = setTimeout(function() {
 				self.$refs.editor.setHtml(self.TalkList[0].editor)
 				self.$refs.editor.setFocus()
 			}, 1)
+			return length
 		},
 		initWebSocket() { /*初始化weosocket*/
 			/*const file = require.context('../assets/empticon/', false, /.png$/).keys()
@@ -1386,6 +1422,7 @@ export default {
 	}
 	.el_icon_select{
 		height: 24px;
+		cursor: pointer;
 		/deep/.session{
 			width: 24px;
 			background: url("../assets/session.png") 100% no-repeat;
