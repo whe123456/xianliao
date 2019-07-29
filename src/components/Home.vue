@@ -19,7 +19,22 @@
 						</el-dropdown>
 					</div>
 					<div class="inner-l-body">
-						<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="nick" @select="handleSelect"></el-autocomplete>
+						<el-autocomplete v-model="input" placeholder="搜索" class="m-search" :fetch-suggestions="querySearch" :trigger-on-focus="false" value-key="nick" @select="handleSelect" popper-class="autocompleteSelect">
+							<template slot-scope="{ item }">
+								<div class="session-options">
+									<div class="option-l">
+										<el-avatar class="user-avatar-second" shape="square" :size="42" :src="item.head_url">
+											<img :src="squareUrl"/>
+										</el-avatar>
+									</div>
+									<div class="option-r">
+										<div class="option-line">
+											<div class="dialog-title">{{item.nick}}</div>
+										</div>
+									</div>
+								</div>
+							</template>
+						</el-autocomplete>
 						<ul class="list-type-nav">
 							<li class="list-type-option" @click="handleClick('first')">
 								<i class="el_icon_select" :class="{ session: activeName!=='first', session2: activeName==='first' }"></i>
@@ -72,7 +87,7 @@
 									active-text-color="#FFF">
 									<el-menu-item-group v-for="(item,listindex) in FriendList" :key = "listindex" class="contact-group">
 										<template slot="title" class="contact-slice">{{item.slice}}</template>
-										<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
+										<el-menu-item class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectFriend===listindex+'-'+index}" @click="FriendClick(listindex,index)" :key = "index">
 											<div class="option-l">
 												<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
 													<img :src="squareUrl"/>
@@ -129,7 +144,7 @@
 					</div>
 				</div>
 				<el-main>
-					<div class="main-inner-r" v-show="activeName==='first'">
+					<div class="main-inner-r" v-show="showActive ==='first'">
 						<div class="inner-r-default" v-if="Object.values(this.Talkinfo).join('') === ''">
 							<div class="tips">
 								<i class="app-icon-bag i-logo3"></i>
@@ -227,7 +242,7 @@
 							</div>-->
 						</div>
 					</div>
-					<div class="main-inner-r" v-show="activeName==='second'">
+					<div class="main-inner-r" v-show="showActive ==='second'">
 						<div class="contact-info">
 							<div class="contact-header">
 								<div>查看详情</div>
@@ -245,7 +260,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="main-inner-r" v-show="activeName==='three'">
+					<div class="main-inner-r" v-show="showActive ==='three'">
 						<div class="contact-info">
 							<div class="contact-header">
 								<div>查看详情</div>
@@ -325,7 +340,8 @@ export default {
 			TalkClick: 0,
 			wait: false,
 			FidList: [],
-			GroupChild: 1 //1群页面2私聊页面
+			GroupChild: 1, //1群页面2私聊页面，
+			showActive: ''
 		}
 	},
 	sockets: {
@@ -388,6 +404,7 @@ export default {
 	methods: {
 		handleClick(e) {
 			this.activeName = e
+			this.showActive = e
 		},
 		talkClick(e) {
 			let body = this.$refs.editor.getHtml().replace('<p>', '')
@@ -460,7 +477,7 @@ export default {
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
 			}
-			if (this.activeName !== 'first') {
+			if (this.showActive !== 'first') {
 				return
 			}
 			const self = this
@@ -651,6 +668,7 @@ export default {
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
+			this.showActive = 'first'
 			this.$nextTick(() => {
 				var div = document.getElementById('chat-body')
 				div.scrollTop = div.scrollHeight
@@ -741,35 +759,35 @@ export default {
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
 			let data = []
-			switch (this.activeName) {
-			case 'first':
-				data = this.TalkList.filter((value) => {
-					return value.nick.includes(queryString)
-				})
-				break
-			case 'second':
-				let info = this.FriendList.map((value) => {
-					return value.info
-				})
-				data = info.reduce((a, b) => { return a.concat(b) })
-				data = data.filter((value) => {
-					return value.nick.includes(queryString)
-				})
-				break
-			case 'three':
-				let tinfo = this.GroupList.map((value) => {
-					return value.info
-				})
-				data = tinfo.reduce((a, b) => { return a.concat(b) })
-				data = data.filter((value) => {
-					return value.nick.includes(queryString)
-				})
-				break
-			}
-			cb(data)
+			let tdata = []
+			let info = this.FriendList.map((value) => {
+				return value.info
+			})
+			data = info.reduce((a, b) => { return a.concat(b) })
+			data = data.filter((value) => {
+				return value.nick.includes(queryString)
+			})
+			let tinfo = this.GroupList.map((value) => {
+				return value.info
+			})
+			tdata = tinfo.reduce((a, b) => { return a.concat(b) })
+			tdata = tdata.filter((value) => {
+				return value.nick.includes(queryString)
+			})
+			const returnData = tdata.concat(data)
+			console.log(returnData)
+			cb(returnData)
 		},
 		handleSelect(item) {
-			switch (this.activeName) {
+			console.log(item)
+			if (item.hasOwnProperty('userInfoList')) {
+				this.Groupinfo = item
+				this.showActive = 'three'
+			} else {
+				this.Friendinfo = item
+				this.showActive = 'second'
+			}
+			/*switch (this.activeName) {
 			case 'first':
 				this.selectTalk(item)
 				break
@@ -780,7 +798,7 @@ export default {
 			case 'three':
 				this.Groupinfo = item
 				break
-			}
+			}*/
 		},
 		websocketclose() {
 			this.$socket.emit('disconnect', 1)
@@ -855,6 +873,22 @@ export default {
 </script>
 
 <style lang="scss">
+	.autocompleteSelect{
+		width: 260px;
+		.el-scrollbar__wrap{
+			overflow: scroll;
+			.session-options{
+				border: none;
+				margin: 5px 0;
+			}
+		}
+		.el-scrollbar__wrap::-webkit-scrollbar{
+			width:0;
+		}
+		.el-scrollbar__wrap::-webkit-scrollbar-thumb{
+			background-color:rgba(0,0,0,.4);
+		}
+	}
 </style>
 <style lang="scss" scoped>
 	.app_main{
@@ -1286,7 +1320,7 @@ export default {
 		margin: 0;
 		flex-direction: column;
 		display: flex;
-		/deep/ .el-dropdown-menu__item{
+		.el-dropdown-menu__item{
 			-webkit-box-sizing: border-box;
 			box-sizing: border-box;
 			padding: 0 26px;
@@ -1299,7 +1333,7 @@ export default {
 			display: flex;
 			align-items: center;
 		}
-		/deep/ .popper__arrow{
+		.popper__arrow{
 			display: none;
 		}
 	}
@@ -1401,87 +1435,7 @@ export default {
 			background: url("../assets/contact3.png") 100% no-repeat;
 		}
 	}
-	/deep/ .session-options{
-		display: flex;
-		border-bottom: 1px solid #292c33;
-		padding: 0;
-		.el-submenu__title{
-			display: flex;
-		}
-		.option-line:last-child{
-			margin-bottom: 0;
-		}
-		.option-l{
-			display: flex;
-			align-items: center;
-			height: 100%;
-		}
-		.option-r{
-			flex: 1 1 auto;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			padding: 0 10px;
-			.option-line{
-				display: flex;
-				padding-right: 14px;
-				margin-bottom: 3px;
-				min-height: 13px;
-				align-items: center;
-				.dialog-title{
-					width: 150px;
-					font-size: 14px;
-					line-height: 1.2;
-					white-space: nowrap;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					.dialog-name{
-						overflow: hidden;
-						white-space: nowrap;
-						text-overflow: ellipsis;
-					}
-				}
-				.last-time{
-					font-size: 12px;
-					color: #8e8e8f;
-					line-height: 12px;
-				}
-				.last-msg{
-					flex: 1 1 auto;
-					display: flex;
-					font-size: 13px;
-					color: #8e8e8f;
-					min-width: 0;
-					overflow: hidden;
-					height: 22px;
-					.last-msg-text {
-						display: flex;
-						flex: 1;
-						min-width: 0;
-						white-space: nowrap;
-						overflow: hidden;
-						text-overflow: ellipsis;
-						align-items: center;
-						/deep/ img{
-							width: 22px;
-							height: 22px;
-						}
-					}
-				}
-				.new-count{
-					height: 16.9px;
-					line-height: 16.9px;
-					width: 16.9px;
-					margin-right: 6px;
-					border-radius: 16.9px;
-					background-color: #f43530;
-					font-size: 11px;
-					text-align: center;
-					color: #fff;
-				}
-			}
-		}
-	}
+
 	.selected{
 		background-color: #3a3f45!important;
 	}
