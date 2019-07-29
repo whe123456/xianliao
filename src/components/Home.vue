@@ -55,7 +55,7 @@
 											<div class="option-line">
 												<div class="last-msg">
 													<span class="last-msg-quot"></span>
-													<span class="last-msg-text">{{item.lastText}}</span>
+													<span class="last-msg-text" v-html="item.lastText"></span>
 												</div>
 												<div class="new-count" v-show="item.newCount!==0">{{item.newCount}}</div>
 											</div>
@@ -95,18 +95,33 @@
 									active-text-color="#FFF">
 									<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
 										<template slot="title" class="contact-slice">{{item.slice}}</template>
-										<el-menu-item  class="session-options" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
-											<div class="option-l">
-												<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
-													<img :src="squareUrl"/>
-												</el-avatar>
-											</div>
-											<div class="option-r">
-												<div class="option-line">
-													<div class="dialog-title">{{info.nick}}</div>
+										<el-submenu  class="session-options flexCloumn" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
+											<template slot="title">
+												<div class="option-l">
+													<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
+														<img :src="squareUrl"/>
+													</el-avatar>
 												</div>
-											</div>
-										</el-menu-item>
+												<div class="option-r">
+													<div class="option-line">
+														<div class="dialog-title">{{info.nick}}</div>
+														<div class="dialog-title">({{info.userInfoList.length}})</div>
+													</div>
+												</div>
+											</template>
+											<el-menu-item v-for="(user,keyIndex) in info.userInfoList" class="session-options optionChild" @click="ChildClick(listindex,index,keyIndex)" :key = "keyIndex">
+												<div class="option-l">
+													<el-avatar class="user-avatar-second" shape="square" :size="42" :src="user.head_url">
+														<img :src="squareUrl"/>
+													</el-avatar>
+												</div>
+												<div class="option-r">
+													<div class="option-line">
+														<div class="dialog-title">{{user.nick}}</div>
+													</div>
+												</div>
+											</el-menu-item>
+										</el-submenu>
 									</el-menu-item-group>
 								</el-menu>
 							</div>
@@ -186,34 +201,6 @@
 							</div>
 							<div class="chat-footer">
 								<div class="input-field">
-									<div class="panel-control" @click="focusEditor">
-										<label class="panel-block app-icon-bag i-face" @click="showPanel"></label>
-										<!--<label class="panel-block app-icon-bag i-file">
-											<el-upload
-												ref="upload"
-												action="https://jsonplaceholder.typicode.com/posts/"
-												:show-file-list="false"
-												:limit="1">
-												<el-button slot="trigger" size="small" type="primary" class="input-file"></el-button>
-											</el-upload>
-										</label>-->
-										<div class="mc" v-show="show_panel" @click="showPanel"></div>
-										<div class="emoticon-panel" v-show="show_panel">
-											<div class="body">
-												<div class="emoticon-content">
-													<table class="emoticon-tb">
-														<tr v-for="(item,index) in empticon" :key = "index">
-															<td v-for="(list,key) in item" :key = "key" @click="checkEmoji(list)"><i data-name="weixiao" class="emoticon-bag" :style="{backgroundImage:'url('+list+')'}"></i></td>
-														</tr>
-													</table>
-												</div>
-												<div class="collection-content"></div>
-											</div>
-											<div class="footer">
-												<div class="emoticon-options emoticon emoticon-options_selected"><i class="app-icon-bag i-emo-face"></i></div>
-											</div>
-										</div>
-									</div>
 									<div class="input-control" @click="focusEditor">
 										<div class="input-container">
 											<editor ref="editor" class="input" @keyup.enter="sendMsg"></editor>
@@ -296,6 +283,7 @@
 <script>
 import editor from '@/components/Editor'
 import {Decrypt, Encrypt} from '@/util/aes.js'
+import {emojiListFind} from '@/util/util.js'
 const pinyin = require('pinyin')
 export default {
 	components: {
@@ -335,7 +323,9 @@ export default {
 			screenY: 0,
 			mUid: '',
 			TalkClick: 0,
-			wait: false
+			wait: false,
+			FidList: [],
+			GroupChild: 1 //1群页面2私聊页面
 		}
 	},
 	sockets: {
@@ -357,6 +347,13 @@ export default {
 					if (item.is_group === 1) {
 						type = 'groups'
 					}
+					let headUrl = self.meUrl
+					const arr = item.body.match(/\[(.+?)\]/g)
+					arr.map((e) => {
+						const str = emojiListFind(e)
+						console.log(e)
+						item.body = item.body.replace(e, str)
+					})
 					self.selectTalk({
 						head_url: '',
 						nick: '',
@@ -366,14 +363,13 @@ export default {
 						from_uid: item.from_uid,
 						groupId: item.group_id,
 						newCount: tbData.length,
-						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
+						list: [{msg: item.body, head_url: headUrl, msgType: msgType}],
 						type: type,
 						editor: '',
 						msgType: 3
 					})
 				})
 			}
-			console.log(data)
 		},
 		disconnect() {
 			this.$socket.emit('reconnect')
@@ -415,6 +411,12 @@ export default {
 		GroupClick(listindex, index) {
 			this.selectGroup = listindex + '-' + index
 			this.Groupinfo = this.GroupList[listindex].info[index]
+			this.GroupChild = 1
+		},
+		ChildClick(listindex, index, keyIndex) {
+			this.selectGroup = listindex + '-' + index
+			this.Groupinfo = this.GroupList[listindex].info[index].userInfoList[keyIndex]
+			this.GroupChild = 2
 		},
 		showPanel() {
 			this.show_panel = !this.show_panel
@@ -431,24 +433,29 @@ export default {
 			this.screenY = e.y
 			this.show_Card = true
 		},
-		checkEmoji(e) {
-			console.log(e)
-			let textarea = this.$refs.editor.getHtml()
-			textarea = textarea + "<img src='" + e + "' class='input-emo'>"
-			console.log(textarea)
-			this.textarea = textarea
-			this.init()
-		},
 		init() {
 			this.$refs.editor.setHtml(this.textarea)
 		},
 		sendMsg() {
-			let body = this.$refs.editor.getHtml().replace('<p>', '')
-			body = body.replace('</p>', '')
-			body = body.replace('<br>', '')
+			let body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '')
 			if (body === '') {
 				return
 			}
+			let sendBody = body.split('<')
+			const matchVal = sendBody.map((e) => {
+				const bodyStr = e.split('>')
+				const match = bodyStr.map((res) => {
+					if (~res.indexOf('alt')) {
+						const reg = /(.*?)alt=('|")(.*?)\2.*?([^<]*)/gi
+						const find = reg.exec(res)
+						return find[3]
+					} else {
+						return res
+					}
+				})
+				return match.join('')
+			})
+			sendBody = matchVal.join('')
 			let isGroup = 1
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
@@ -463,7 +470,7 @@ export default {
 				to_uid: this.Talkinfo.uid, //好友的uid 主要不是uuid
 				group_id: this.Talkinfo.groupId, //群消息 id
 				type: 0, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
-				body: body, //文字信息内容
+				body: sendBody, //文字信息内容
 				file_url: '' //非文字内容的资源地址（如：图片或视频，需要传这个）
 			}
 			self.wait = true
@@ -483,6 +490,7 @@ export default {
 				editor: '',
 				wait: true
 			})
+			console.log(body)
 			self.$socket.emit('chatevent', {cmd: 1403, data: Encrypt(obj)}, function(e) {
 				const info = Decrypt(e)
 				if (info['state'] === 1) {
@@ -500,6 +508,15 @@ export default {
 				info = this.Groupinfo
 				type = 'groups'
 				groupId = info.group_id
+				if (this.GroupChild === 2) {
+					if (info.uid === this.mUid) {
+						return
+					}
+					if (!this.FidList.includes(info.uid)) {
+						this.$message('不是好友关系')
+						return
+					}
+				}
 			} else {
 				info = this.Friendinfo
 				type = 'friends'
@@ -521,9 +538,13 @@ export default {
 			this.selectTalk(Talk)
 		},
 		selectTalk(data) {
+			let msgType = 2
+			if (data.hasOwnProperty('msgType')) {
+				msgType = data.msgType
+				delete data.msgType
+			}
 			if (data.type === 'friends') {
 				let info = ''
-				console.log(data.uid, this.mUid, this.FriendList)
 				if (data.uid === this.mUid) {
 					this.FriendList.forEach((value) => {
 						const findinfo = value.info.find(n => n.uid === data.from_uid)
@@ -533,9 +554,7 @@ export default {
 					})
 				} else {
 					this.FriendList.forEach((value) => {
-						console.log('value', value.info)
 						const findinfo = value.info.find(n => n.uid === data.uid)
-						console.log(findinfo)
 						if (typeof findinfo !== 'undefined') {
 							info = findinfo
 						}
@@ -544,6 +563,9 @@ export default {
 				if (info !== '') {
 					data.head_url = info.head_url
 					data.nick = info.nick
+					if (msgType === 3) {
+						data.list[0].head_url = info.head_url
+					}
 				}
 			} else {
 				let info = ''
@@ -556,12 +578,13 @@ export default {
 				if (info !== '') {
 					data.head_url = info.head_url
 					data.nick = info.nick
+					if (msgType === 3) {
+						const findUser = info.userInfoList.find(n => n.uid === data.from_uid)
+						if (typeof findUser !== 'undefined') {
+							data.list[0].head_url = findUser.head_url
+						}
+					}
 				}
-			}
-			let msgType = 2
-			if (data.hasOwnProperty('msgType')) {
-				msgType = data.msgType
-				delete data.msgType
 			}
 			console.log('talkList', this.TalkList)
 			const self = this
@@ -580,9 +603,15 @@ export default {
 					delete data.wait
 				}
 				if (data.type === 'friends') {
-					const findIndex = this.TalkList.findIndex(n => n.uid === data.uid)
+					let findId = ''
+					if (data.uid === this.mUid) {
+						findId = data.from_uid
+					} else {
+						findId = data.uid
+					}
+					const findIndex = this.TalkList.findIndex(n => n.uid === findId)
 					if (~findIndex) {
-						let TheFind = [this.TalkList.find(n => n.uid === data.uid)]
+						let TheFind = [this.TalkList.find(n => n.uid === findId)]
 						if (msgType === 3) {
 							TheFind[0].lastTime = data.lastTime
 							TheFind[0].lastText = data.lastText
@@ -619,7 +648,6 @@ export default {
 					}
 				}
 			}
-			console.log(this.TalkList)
 			this.selectIndex = 0
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
@@ -635,33 +663,31 @@ export default {
 			return length
 		},
 		initWebSocket() { /*初始化weosocket*/
-			/*const file = require.context('../assets/empticon/', false, /.png$/).keys()
-			var array = Object.values(file.reduce((res, item, index) => {
-				const src = require('../assets/empticon/' + item.substring(2))
-				res[parseInt(index / 15)] ? res[parseInt(index / 15)].push(src) : res[parseInt(index / 15)] = [src]
-				return res
-			}, {}))*/
 			const self = this
 			self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
 				const data = Decrypt(e)
-				console.log(data)
+				console.log('1404', data)
 				if (data.state === 0) {
 					self.websocketclose()
 					return
 				}
+				this.FidList = data.friends.map((e) => {
+					return e.friend_uid
+				})
 				const rData = data.friends.reduce((res, item, index) => {
 					item['py'] = (pinyin(item.nick.substring(0, 1), {
 						style: pinyin.STYLE_FIRST_LETTER
 					}))[0][0].toUpperCase()
 					item['index'] = index
+					if (item['nick_mark'] !== '') {
+						item['nick'] = item['nick_mark']
+					}
 					item['uid'] = item.friend_uid
 					res[index] = item
 					return res
 				}, [])
-				console.log(rData)
 				const friendsData = rData.reduce((res, item) => {
 					const index = res.findIndex(n => n.slice === item['py'])
-					console.log(res)
 					if (~index) {
 						res[index].info.push(item)
 					} else {
@@ -699,36 +725,13 @@ export default {
 					}
 					return res
 				}, [])
+				console.log(groupsData)
 				self.GroupList = groupsData.sort((x, y) => {
 					if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
 						return 1
 					}
 					return -1
 				})
-				/*const tbData = Decrypt('ehVdoN88KWFB+Mga9L8xOy5D2yVg0m7C7u4kf2qsfHnWOTPItpKi5dabxjiadkmUARXLSl/hwLQLN0NSqRcUbwVwcKKlmlHK51Yf+Ar3DvxjRSx2feKnFmbXZBTq3QwelQMp/nHpdst5rGHaO81YaIeqC5YpQ3xNFjF5yinM0TyeQtoY2Ujn0sUTnOOTJ1gNOg4ucGOwpsJtWNALkvRW54k0QfePkB1JjDPL+JUjoqgn7J9m0iCV/sz5xEMJY2+I7NNge5TjV8MoGbmfynANFu0oHAHWyfpk2vzb3rzHlwllT7lup4S/9/oJ2OSmNBCePseflgH1OqKoFg7NSFrYP/P+Z2zbeOsDFr8lFLfVC5YYv8/M90HP9tvG+hOoH3eB2jK7h5mmW7Djv2VwLSkn+g==')
-				tbData.forEach((item) => {
-					let msgType = 3
-					if (self.mUid !== item.to_uid) {
-						msgType = 2
-					}
-					let type = 'friends'
-					if (item.is_group === 1) {
-						type = 'groups'
-					}
-					self.selectTalk({
-						head_url: '',
-						nick: '',
-						lastTime: item.create_ts,
-						lastText: item.body,
-						uid: item.to_uid,
-						from_uid: item.from_uid,
-						groupId: item.group_id,
-						newCount: tbData.length,
-						list: [{msg: item.body, head_url: self.meUrl, msgType: msgType}],
-						type: type,
-						editor: ''
-					})
-				})*/
 			})
 		},
 		closesocket() {
@@ -789,27 +792,14 @@ export default {
 	},
 	mounted() {
 		const _this = this
-		/* eslint-disable */
-		_this.empticon = emojiList
-		/* eslint-enable */
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
-				/*e = e || window.event
-				console.log(e)
-				// 兼容IE8和Firefox 4之前的版本
-				if (e) {
-					_this.websocketclose()
-					e.returnValue = '关闭提示'
-				}
-				// Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
-				return '关闭提示'*/
 				_this.websocketclose()
 			} else {
 				window.onbeforeunload = null
 			}
 		}
 		const Login = sessionStorage.getItem('Login')
-		console.log(Login)
 		if (Login === null) {
 			this.$router.push('/Login')
 			return false
@@ -826,6 +816,40 @@ export default {
 				_this.sendMsg()
 			}
 		}
+		/*const d = 'ehVdoN88KWFB+Mga9L8xO85th+qNkMrb0kcnm5Zrikg8s3dUxDGk+qzK9I7aXZhoGMfjTkWo/D+e8OBrnaIzqZz1hoovZdof7miUr85yWlm6z1xJZcvl+QbE6LwvziDREyED3HlwocrbWOqj23Kc8HCL6sodD6SaJLfqQFnfNd7rjSELy04FAHuz3+1yOD8xZ0DYOdG9ekRNuKJez5+4+ioTdOiIs7tCsA59trfZsZ0ncDTuc/01pJiuTU1VoOO9FzeD0oD5k4ZEWK2mGoj/b0xhurRj+EdHb9STjJH0JsxPQ3ciZ9gSUj0ehkPiG9+/rWYNrAH0kgL4bREY0C4TalzGPvggkL/JMu5sbcnxnq7Vk/GyZKwZgx9mh7yrmfyo/5GUcFps/rZ7S6ka0jkufw=='
+		const tbData = Decrypt(d)
+		tbData.forEach((item) => {
+			let msgType = 3
+			if (self.mUid !== item.to_uid) {
+				msgType = 2
+			}
+			let type = 'friends'
+			if (item.is_group === 1) {
+				type = 'groups'
+			}
+			let headUrl = self.meUrl
+			item.body = '2[吓]10[吓][吓][吓][吓][吓]'
+			const arr = item.body.match(/\[(.+?)\]/g)
+			arr.map((e) => {
+				const str = emojiListFind(e)
+				console.log(e)
+				item.body = item.body.replace(e, str)
+			})
+			this.selectTalk({
+				head_url: '',
+				nick: '',
+				lastTime: item.create_ts,
+				lastText: item.body,
+				uid: item.to_uid,
+				from_uid: item.from_uid,
+				groupId: item.group_id,
+				newCount: tbData.length,
+				list: [{msg: item.body, head_url: headUrl, msgType: msgType}],
+				type: type,
+				editor: '',
+				msgType: 3
+			})
+		})*/
 	}
 }
 </script>
@@ -1036,6 +1060,14 @@ export default {
 												font-size: 14px;
 												line-height: 20px;
 												word-break: break-all;
+												span{
+													display: flex;
+													align-items: center;
+													img{
+														width: 22px;
+														height: 22px;
+													}
+												}
 											}
 										}
 										.message-info.blue {
@@ -1071,85 +1103,8 @@ export default {
 						order: 3;
 						background-color: #eee;
 						.input-field {
-							padding: 15px 20px 22px 20px;
 							background-color: inherit;
 							border-top: 1px solid #d6d6d6;
-							.panel-control {
-								position: relative;
-								margin-bottom: 10px;
-								.panel-block {
-									margin-right: 16px;
-									overflow: hidden;
-									cursor: pointer;
-								}
-								.i-face {
-									height: 24px;
-									width: 24px;
-									background-image: url("../assets/face.png");
-								}
-								.i-file {
-									height: 24px;
-									width: 24px;
-									background-image: url("../assets/file.png");
-									.input-file {
-										opacity: 0;
-										cursor: pointer;
-									}
-								}
-								.emoticon-panel {
-									position: absolute;
-									bottom: 50px;
-									left: -10px;
-									width: 473px;
-									border: 1px solid #dedede;
-									background-color: #fff;
-									z-index: 999;
-									.emoticon-content {
-										padding: 14px;
-										.emoticon-tb {
-											width: 100%;
-											table-layout: fixed;
-											border: 1px solid #f0f0f0;
-											td {
-												border: 1px solid #f0f0f0;
-												cursor: pointer;
-											}
-										}
-									}
-									.footer {
-										background-color: #f2f2f2;
-										.emoticon-options {
-											display: inline-block;
-											width: 56px;
-											height: 38px;
-											line-height: 38px;
-											border-radius: 2px;
-											text-align: center;
-											i {
-												position: relative;
-												top: 6px;
-											}
-											.app-icon-bag.i-emo-face {
-												height: 22px;
-												width: 22px;
-												background-image: url("../assets/i_face.png");
-											}
-										}
-										.emoticon-options_selected {
-											background-color: #fff;
-										}
-									}
-								}
-								.emoticon-panel:after {
-									position: absolute;
-									bottom: -11px;
-									left: 13px;
-									content: " ";
-									height: 14px;
-									width: 17px;
-									background-image: url("../assets/bottomIcon.png");
-								}
-							}
 							.input-control {
 								margin-bottom: 10px;
 								display: flex;
@@ -1166,20 +1121,17 @@ export default {
 								.input-container {
 									flex: 1 1 auto;
 									width: 0;
-									overflow-y: scroll;
-									height: 50px;
+									/*overflow-y: scroll;*/
+									/*height: 50px;*/
+									height: 150px;
 									/deep/.input {
 										line-height: 20px;
 										font-size: 14px;
 										user-select: text;
 										word-wrap: break-word;
-										white-space: pre-wrap;
 										cursor: text;
 										background-color:#eee;
-										::-webkit-scrollbar{
-											width:0;
-										}
-										/deep/.el-textarea__inner{
+										.el-textarea__inner{
 											background-color:#eee;
 											resize:none;
 											border: none;
@@ -1198,6 +1150,7 @@ export default {
 								}
 							}
 							.button-control {
+								padding: 0 20px 22px 20px;
 								text-align: right;
 								.btn-label {
 									display: inline-block;
@@ -1448,18 +1401,19 @@ export default {
 			background: url("../assets/contact3.png") 100% no-repeat;
 		}
 	}
-	.session-options{
+	/deep/ .session-options{
 		display: flex;
-		height: 66px;
 		border-bottom: 1px solid #292c33;
-		padding: 0!important;
+		padding: 0;
+		.el-submenu__title{
+			display: flex;
+		}
 		.option-line:last-child{
 			margin-bottom: 0;
 		}
 		.option-l{
 			display: flex;
 			align-items: center;
-			margin: 0 15px 0 18px;
 			height: 100%;
 		}
 		.option-r{
@@ -1467,16 +1421,15 @@ export default {
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
-			padding-top: 5px;
+			padding: 0 10px;
 			.option-line{
 				display: flex;
 				padding-right: 14px;
-				margin-bottom: 6px;
+				margin-bottom: 3px;
 				min-height: 13px;
+				align-items: center;
 				.dialog-title{
-					display: flex;
-					flex: 1 1 auto;
-					padding-right: 10px;
+					width: 150px;
 					font-size: 14px;
 					line-height: 1.2;
 					white-space: nowrap;
@@ -1498,16 +1451,21 @@ export default {
 					display: flex;
 					font-size: 13px;
 					color: #8e8e8f;
-					height: 16.9px;
-					line-height: 16.9px;
 					min-width: 0;
 					overflow: hidden;
+					height: 22px;
 					.last-msg-text {
+						display: flex;
 						flex: 1;
 						min-width: 0;
 						white-space: nowrap;
 						overflow: hidden;
 						text-overflow: ellipsis;
+						align-items: center;
+						/deep/ img{
+							width: 22px;
+							height: 22px;
+						}
 					}
 				}
 				.new-count{
@@ -1702,7 +1660,7 @@ export default {
 	}
 	@media screen and (max-height: 690px) and (min-height: 450px) {
 		.app_main {
-			height: 450px;
+			height: 450px !important;
 		}
 	}
 	@media screen and (max-height: 841px) and (min-height: 690px) {

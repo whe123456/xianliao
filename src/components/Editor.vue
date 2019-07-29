@@ -1,10 +1,13 @@
 <template>
 	<div id="wangeditor">
+		<div ref="emoticonPanel" class="panel-control">
+		</div>
 		<div ref="editor" style="text-align:left"></div>
 	</div>
 </template>
 <script>
 import E from 'wangeditor'
+import {emojiList} from '@/util/util.js'
 export default {
 	name: 'editor',
 	data() {
@@ -14,31 +17,25 @@ export default {
 	},
 	methods: {
 		init() {
-			this.editor = new E(this.$refs.editor)
+			this.editor = new E(this.$refs.emoticonPanel, this.$refs.editor)
 
 			this.setMenus() //设置菜单
 			this.editor.create() //创建编辑器
 		},
 		setMenus() {
-			/*this.editor.customConfig.menus = [
-				'head', // 标题
-				'bold', // 粗体
-				'fontSize', // 字号
-				'fontName', // 字体
-				'italic', // 斜体
-				'underline', // 下划线
-				'strikeThrough', // 删除线
-				'foreColor', // 文字颜色
-				'backColor', // 背景颜色
-				'link', // 插入链接
-				'list', // 列表
-				'justify', // 对齐方式
-				'image', // 插入图片
-				'table', // 表格
-				'undo', // 撤销
-				'redo' // 重复
-			]*/
-			this.editor.customConfig.menus = []
+			this.editor.customConfig.menus = [
+				'emoticon'
+			]
+			this.editor.customConfig.emotions = [
+				{
+					// tab 的标题
+					title: '<i class="app-icon-bag i-emo-face"></i>',
+					// type -> 'emoji' / 'image'
+					type: 'image',
+					// content -> 数组
+					content: emojiList()
+				}
+			]
 		},
 		getHtml() {
 			return this.editor.txt.html()
@@ -62,16 +59,150 @@ export default {
 		border: none !important;
 		height: auto !important;
 		min-height: 40px;
-	}
-	/deep/ .w-e-toolbar{
-		display: none;
+		position: unset;
+		padding: 0 20px;
 	}
 	/deep/ .w-e-text{
 		padding: 0;
 		display: flex;
+		position: relative;
+		height: 90px!important;
+		img{
+			width: 22px;
+			height: 22px;
+		}
+	}
+
+	/deep/ .w-e-text::-webkit-scrollbar{
+		width:6px;
+		height: 0;
+	}
+	/deep/ .w-e-text::-webkit-scrollbar-thumb{
+		background-color:rgba(0,0,0,.6);
 	}
 	/deep/ .w-e-text p{
 		word-break: break-all;
 		margin: 0;
+	}
+	/deep/ .w-e-menu {
+		display: flex !important;
+		margin: 15px 20px;
+		padding: 0 !important;
+		.w-e-icon-happy {
+			margin-right: 16px;
+			overflow: hidden;
+			cursor: pointer;
+			height: 24px;
+			width: 24px;
+			background-image: url("../assets/face.png");
+			display: inline-block;
+			background-position: 50%;
+			background-repeat: no-repeat;
+		}
+		.w-e-icon-happy:before {
+			display: none;
+		}
+	}
+
+	/deep/ .w-e-panel-container {
+		position: absolute!important;
+		width: 470px!important;
+		border: 1px solid #dedede!important;
+		background-color: #fff!important;
+		z-index: 999!important;
+		left: 165px!important;
+		display: flex!important;
+		flex-direction: column-reverse!important;
+		box-shadow: unset!important;
+		top: calc(100% - 428px)!important;
+		.w-e-panel-close{
+			display: none;
+		}
+		.w-e-panel-tab-title {
+			background-color: #f2f2f2 !important;
+			margin: 0 !important;
+			overflow: hidden !important;
+			.w-e-active {
+				display: inline-block !important;
+				width: 56px !important;
+				height: 38px !important;
+				line-height: 38px !important;
+				border-radius: 2px !important;
+				text-align: center !important;
+				margin: 0 !important;
+				padding: 0 !important;
+				background-color: #fff !important;
+				color: unset !important;
+				border: unset !important;
+				i {
+					position: relative;
+					top: 6px;
+				}
+				.i-emo-face {
+					height: 22px;
+					width: 22px;
+					background-image: url("../assets/i_face.png");
+				}
+			}
+		}
+		.w-e-panel-tab-content{
+			padding: 14px;
+			height: auto!important;
+			.w-e-item {
+				border: 1px solid #f0f0f0;
+				cursor: pointer;
+				margin-right: -1px;
+				margin-top: -1px;
+				height: 33px;
+				width: 30px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				img {
+					display: inline-block;
+					background-repeat: no-repeat;
+					background-position: 50%;
+					height: 22px;
+					width: 22px;
+				}
+			}
+		}
+	}
+
+	/deep/ .w-e-panel-container:after {
+		position: absolute;
+		bottom: -11px;
+		left: 13px;
+		content: " ";
+		height: 14px;
+		width: 17px;
+		background-image: url("../assets/bottomIcon.png");
+	}
+	/deep/ .panel-control {
+		.panel-block {
+			margin-right: 16px;
+			overflow: hidden;
+			cursor: pointer;
+		}
+		.i-file {
+			height: 24px;
+			width: 24px;
+			background-image: url("../assets/file.png");
+			.input-file {
+				opacity: 0;
+				cursor: pointer;
+			}
+		}
+	}
+
+	@media screen and (max-width: 1000px) and (min-width: 900px) {
+		/deep/ .w-e-panel-container{
+			top: calc(100% - 428px) !important;
+		}
+	}
+	@media screen and (max-width: 900px) {
+		/deep/ .w-e-panel-container{
+			top: calc(100% - 428px) !important;
+		}
 	}
 </style>

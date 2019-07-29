@@ -43,11 +43,9 @@ table {
 	top: 0;
 	z-index: 998;
 }
-.el-popper {
-	/deep/ .el-autocomplete-suggestion__wrap {
-		width: unset;
-		overflow: scroll;
-	}
+/deep/ .el-autocomplete-suggestion__wrap {
+	width: unset;
+	overflow: scroll;
 }
 .wrapper{
 	display: flex;
@@ -76,4 +74,10 @@ table {
 	width: 20px;
 	background-size: 100%;
 	background-image: url("../assets/waiting.gif");
+}
+.flexCloumn{
+	flex-direction: column;
+}
+.optionChild{
+	margin: 5px 0;
 }
