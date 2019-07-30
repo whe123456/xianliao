@@ -59,7 +59,8 @@ export default {
 			qr: true,
 			tiemOut: '',
 			visible: false,
-			qrcode: ''
+			qrcode: '',
+			count: 1
 		}
 	},
 	sockets: {
@@ -79,12 +80,14 @@ export default {
 			}
 		},
 		disconnect() {
-			console.log(212121)
+			console.log('disconnect')
 			this.$socket.emit('reconnect')
 		},
 		reconnect() {
-			console.log(212121)
-			this.$router.go(0)
+			console.log('reconnect')
+			if (this.count === 1) {
+				this.$router.go(0)
+			}
 		}
 	},
 	methods: {
@@ -98,6 +101,7 @@ export default {
 						userid: '10925',
 						pass: sha256('111111')
 					}*/
+					this.count = 2
 					var obj = Encrypt({userid: self.ruleForm.username, pass: sha256(self.ruleForm.password)})
 					self.$socket.emit('chatevent', {cmd: 1401, data: obj}, function(e) {
 						const info = Decrypt(e)
@@ -107,7 +111,10 @@ export default {
 							self.$router.push('/')
 						} else {
 							self.$alert(info.msg, '提示', {
-								confirmButtonText: '确定'
+								confirmButtonText: '确定',
+								callback: (e) => {
+									self.$router.go(0)
+								}
 							})
 						}
 					})
@@ -122,7 +129,7 @@ export default {
 		},
 		getQr() {
 			const self = this
-			console.log(111)
+			this.count = 1
 			self.$socket.emit('chatevent', {cmd: 1406, data: Encrypt('')}, function(e) {
 				self.loading = false
 				const data = Decrypt(e)

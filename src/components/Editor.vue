@@ -1,5 +1,14 @@
 <template>
 	<div id="wangeditor">
+		<el-upload
+			id="uploadEl"
+			action="https://jsonplaceholder.typicode.com/posts/"
+			:multiple="false"
+			:show-file-list="false"
+			accept=".jpg,.jpeg,.png,.gif,.zip,.pdf,.rar"
+			:limit="1">
+			<div class="w-e-menu"><i class="i-file"></i></div>
+		</el-upload>
 		<div ref="emoticonPanel" class="panel-control">
 		</div>
 		<div ref="editor" style="text-align:left"></div>
@@ -21,6 +30,9 @@ export default {
 
 			this.setMenus() //设置菜单
 			this.editor.create() //创建编辑器
+			const panel = document.getElementById('wangeditor').getElementsByClassName('panel-control')[0]
+			const uploadEl = document.getElementById('uploadEl')
+			panel.appendChild(uploadEl)
 		},
 		setMenus() {
 			this.editor.customConfig.menus = [
@@ -86,10 +98,9 @@ export default {
 	}
 	/deep/ .w-e-menu {
 		display: flex !important;
-		margin: 15px 20px;
+		margin: 15px 0px 15px 20px;
 		padding: 0 !important;
 		.w-e-icon-happy {
-			margin-right: 16px;
 			overflow: hidden;
 			cursor: pointer;
 			height: 24px;
@@ -187,7 +198,7 @@ export default {
 		.i-file {
 			height: 24px;
 			width: 24px;
-			background-image: url("../assets/file.png");
+			background: url("../assets/file.png") no-repeat 100%;
 			.input-file {
 				opacity: 0;
 				cursor: pointer;

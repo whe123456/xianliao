@@ -107,10 +107,12 @@
 									background-color="#292c33"
 									text-color="#fff"
 									default-active="0"
-									active-text-color="#FFF">
+									active-text-color="#FFF"
+									unique-opened
+									@open="GroupClick">
 									<el-menu-item-group v-for="(item,listindex) in GroupList" :key = "listindex" class="contact-group">
 										<template slot="title" class="contact-slice">{{item.slice}}</template>
-										<el-submenu  class="session-options flexCloumn" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" @click="GroupClick(listindex,index)" :key = "index">
+										<el-submenu  class="session-options flexCloumn" v-for="(info, index) in item.info" :index="listindex+'-'+index" :class="{ selected: selectGroup===listindex+'-'+index}" :key = "index">
 											<template slot="title">
 												<div class="option-l">
 													<el-avatar class="user-avatar-second" shape="square" :size="42" :src="info.head_url">
@@ -365,11 +367,12 @@ export default {
 					}
 					let headUrl = self.meUrl
 					const arr = item.body.match(/\[(.+?)\]/g)
-					arr.map((e) => {
-						const str = emojiListFind(e)
-						console.log(e)
-						item.body = item.body.replace(e, str)
-					})
+					if (arr) {
+						arr.map((e) => {
+							const str = emojiListFind(e)
+							item.body = item.body.replace(e, str)
+						})
+					}
 					self.selectTalk({
 						head_url: '',
 						nick: '',
@@ -425,9 +428,10 @@ export default {
 			this.selectFriend = listindex + '-' + index
 			this.Friendinfo = this.FriendList[listindex].info[index]
 		},
-		GroupClick(listindex, index) {
-			this.selectGroup = listindex + '-' + index
-			this.Groupinfo = this.GroupList[listindex].info[index]
+		GroupClick(index) {
+			const path = index.split('-')
+			this.selectGroup = path
+			this.Groupinfo = this.GroupList[path[0]].info[path[1]]
 			this.GroupChild = 1
 		},
 		ChildClick(listindex, index, keyIndex) {
@@ -834,7 +838,7 @@ export default {
 				_this.sendMsg()
 			}
 		}
-		/*const d = 'ehVdoN88KWFB+Mga9L8xO85th+qNkMrb0kcnm5Zrikg8s3dUxDGk+qzK9I7aXZhoGMfjTkWo/D+e8OBrnaIzqZz1hoovZdof7miUr85yWlm6z1xJZcvl+QbE6LwvziDREyED3HlwocrbWOqj23Kc8HCL6sodD6SaJLfqQFnfNd7rjSELy04FAHuz3+1yOD8xZ0DYOdG9ekRNuKJez5+4+ioTdOiIs7tCsA59trfZsZ0ncDTuc/01pJiuTU1VoOO9FzeD0oD5k4ZEWK2mGoj/b0xhurRj+EdHb9STjJH0JsxPQ3ciZ9gSUj0ehkPiG9+/rWYNrAH0kgL4bREY0C4TalzGPvggkL/JMu5sbcnxnq7Vk/GyZKwZgx9mh7yrmfyo/5GUcFps/rZ7S6ka0jkufw=='
+		/*const d = 'ehVdoN88KWFB+Mga9L8xOy5D2yVg0m7C7u4kf2qsfHmNHhdEJNqUEvN96lbh0NBUARXLSl/hwLQLN0NSqRcUby8iX6LcX+sHjh85MRGeIipjRSx2feKnFmbXZBTq3QwelQMp/nHpdst5rGHaO81YaIeqC5YpQ3xNFjF5yinM0TxNngISxEj0gPX2ptM8nUGeNblokALQolBfbIczAXvFJb8WPrwKp0v+MGUh8JWEEC2VY1X5G2av6tP9XZ2pR0+d93cSBMC++PV6V9aRdSKybnQVRRSSdGfNs5boSzjrJaEXcMh23n9plhshZy5FOLhvPeq/9rGIpSykxaQYmq+rPYxGc6/LeL5+/nNM8Muz466MrHfka4fhfeUWbFWzr6a4SeEcCb57WySPj3dD/IQ2tQ=='
 		const tbData = Decrypt(d)
 		tbData.forEach((item) => {
 			let msgType = 3
@@ -846,13 +850,15 @@ export default {
 				type = 'groups'
 			}
 			let headUrl = self.meUrl
-			item.body = '2[吓]10[吓][吓][吓][吓][吓]'
 			const arr = item.body.match(/\[(.+?)\]/g)
-			arr.map((e) => {
-				const str = emojiListFind(e)
-				console.log(e)
-				item.body = item.body.replace(e, str)
-			})
+			console.log(arr)
+			if (arr) {
+				arr.map((e) => {
+					const str = emojiListFind(e)
+					console.log(e)
+					item.body = item.body.replace(e, str)
+				})
+			}
 			this.selectTalk({
 				head_url: '',
 				nick: '',
