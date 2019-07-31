@@ -10,10 +10,25 @@ module.exports = {
     // Paths
     assetsSubDirectory: 'static',
     assetsPublicPath: '/',
-    proxyTable: {},
+    proxyTable: {
+		'/chaoxchat': { //替换代理地址名称
+			target: 'http://api.oyxin.cn/chaoxchat', //代理地址
+			changeOrigin: true, //可否跨域
+			pathRewrite: {
+				'^/chaoxchat': '/' //重写接口，去掉/api
+			}
+		},
+		'/mixinimage': { //替换代理地址名称
+			target: 'http://v0.api.upyun.com/mixinimage', //代理地址
+			changeOrigin: true, //可否跨域
+			pathRewrite: {
+				'^/mixinimage': '/' //重写接口，去掉/api
+			}
+		}
+	},
 
     // Various Dev Server settings
-    host: '192.168.0.188', // can be overwritten by process.env.HOST
+    host: '192.168.0.106', // can be overwritten by process.env.HOST
     port: 8080, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
     autoOpenBrowser: false,
     errorOverlay: true,

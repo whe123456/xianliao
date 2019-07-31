@@ -2,7 +2,6 @@
 	<div id="wangeditor">
 		<el-upload
 			id="uploadEl"
-			:action="action"
 			:headers="myHeaders"
 			:multiple="false"
 			:show-file-list="false"
@@ -25,8 +24,7 @@ export default {
 	data() {
 		return {
 			editor: '',
-			myHeaders: {},
-			action: 'http://v0.api.upyun.com/mixinimage'
+			myHeaders: {}
 		}
 	},
 	methods: {
@@ -71,6 +69,7 @@ export default {
 				}
 			})
 			const value = elems.join('&')
+			console.log(value)
 			const auth = this.hmacsha1(secret, value)
 			return `UPYUN ${key}:${auth}`
 		},
@@ -82,14 +81,17 @@ export default {
 		},
 		fileUpload(e) {
 			const _this = this
-			this.$jsonp(_this.action, { file: e.file }).then(e => {
+			/*this.$jsonp(_this.action, { file: e.file }).then(e => {
 				console.log(e)
-			})
-			/*_this.axios.post('http://api.oyxin.cn/chaoxchat/upyun-php-sdk-3.3.0/php-sdk/examples/client-upload/policy.php', { save_path: e.file.name }, e.headers, (res) => {
-			})
-			console.log(e.file.name)
-			_this.axios.post(_this.action, { file: e.file }, e.headers, (res) => {
 			})*/
+			/*_this.axios.post('/chaoxchat/upyun-php-sdk-3.3.0/php-sdk/examples/client-upload/policy.php', { save_path: e.file.name }, e.headers, (res) => {
+				console.log(res)
+			})
+			console.log(e.file.name)*/
+			console.log(e.headers)
+			_this.axios.post('/mixinimage', { file: e.file }, e.headers, (res) => {
+				console.log(1, res)
+			})
 		}
 	},
 	mounted() {
@@ -97,17 +99,24 @@ export default {
 			this.init()
 		})
 		const date = new Date().toGMTString()
-		const key = 'osobo'
-		const secret = 'osobo'
+		const key = 'downloadapk'
+		const secret = 'nice8888'
 		const method = 'GET'
-		const uri = '/v1/apps/'
+		const uri = '/mixinimage'
 
 		/*console.log(this.MD5('secret'))
 		console.log(this.sign(key, this.MD5(secret), method, uri, date)) // 上传，处理，内容识别有存储
 		console.log(this.sign(key, secret, method, uri, date))// 内容识别无存储，容器云*/
+		/*var options = {
+			'bucket': uri,
+			'save-key': '/{year}/{mon}/{day}/{filemd5}{.suffix}',
+			'expiration': Math.floor(new Date().getTime() / 1000) + 86400
+		}
+		var policy = window.btoa(JSON.stringify(options));*/
 		this.myHeaders = {
 			'Authorization': this.sign(key, this.MD5(secret), method, uri, date),
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			'X-Date': date
 		}
 	}
 }
