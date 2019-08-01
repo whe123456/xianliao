@@ -217,10 +217,10 @@
 								</div>
 							</div>
 							<div class="chat-footer">
-								<div class="input-field">
+								<div class="input-field" v-loading="loading">
 									<div class="input-control" @click="focusEditor">
 										<div class="input-container">
-											<editor ref="editor" class="input" @keyup.enter="sendMsg"></editor>
+											<editor ref="editor" class="input" @keyup.enter="sendMsg" :fatherSend="fatherSend"></editor>
 											<div class="m-hide-seat"></div>
 										</div>
 									</div>
@@ -301,7 +301,6 @@
 import editor from '@/components/Editor'
 import {Decrypt, Encrypt} from '@/util/aes.js'
 import {emojiListFind} from '@/util/util.js'
-const pinyin = require('pinyin')
 export default {
 	components: {
 		editor: editor
@@ -343,7 +342,8 @@ export default {
 			wait: false,
 			FidList: [],
 			GroupChild: 1, //1群页面2私聊页面，
-			showActive: ''
+			showActive: '',
+			loading: false
 		}
 	},
 	sockets: {
@@ -356,6 +356,7 @@ export default {
 				})
 			} else if (data.cmd === 1403) {
 				const tbData = Decrypt(data.data)
+				console.log(tbData)
 				tbData.forEach((item) => {
 					let msgType = 3
 					if (self.mUid !== item.to_uid) {
@@ -366,12 +367,16 @@ export default {
 						type = 'groups'
 					}
 					let headUrl = self.meUrl
-					const arr = item.body.match(/\[(.+?)\]/g)
-					if (arr) {
-						arr.map((e) => {
-							const str = emojiListFind(e)
-							item.body = item.body.replace(e, str)
-						})
+					if (item.type === 0) {
+						const arr = item.body.match(/\[(.+?)\]/g)
+						if (arr) {
+							arr.map((e) => {
+								const str = emojiListFind(e)
+								item.body = item.body.replace(e, str)
+							})
+						}
+					} else {
+						item.body = '<img src="' + item.file_url + '" class="sendImg">'
 					}
 					self.selectTalk({
 						head_url: '',
@@ -385,7 +390,7 @@ export default {
 						list: [{msg: item.body, head_url: headUrl, msgType: msgType}],
 						type: type,
 						editor: '',
-						msgType: 3
+						msgType: msgType
 					})
 				})
 			}
@@ -457,26 +462,34 @@ export default {
 		init() {
 			this.$refs.editor.setHtml(this.textarea)
 		},
-		sendMsg() {
-			let body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '')
-			if (body === '') {
-				return
-			}
-			let sendBody = body.split('<')
-			const matchVal = sendBody.map((e) => {
-				const bodyStr = e.split('>')
-				const match = bodyStr.map((res) => {
-					if (~res.indexOf('alt')) {
-						const reg = /(.*?)alt=('|")(.*?)\2.*?([^<]*)/gi
-						const find = reg.exec(res)
-						return find[3]
-					} else {
-						return res
-					}
+		sendMsg(type = 0, url = '') {
+			let sendBody = ''
+			let fileUrl = ''
+			let body = ''
+			if (type === 0) {
+				body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '')
+				if (body === '') {
+					return
+				}
+				sendBody = body.split('<')
+				const matchVal = sendBody.map((e) => {
+					const bodyStr = e.split('>')
+					const match = bodyStr.map((res) => {
+						if (~res.indexOf('alt')) {
+							const reg = /(.*?)alt=('|")(.*?)\2.*?([^<]*)/gi
+							const find = reg.exec(res)
+							return find[3]
+						} else {
+							return res
+						}
+					})
+					return match.join('')
 				})
-				return match.join('')
-			})
-			sendBody = matchVal.join('')
+				sendBody = matchVal.join('')
+			} else {
+				fileUrl = url
+				body = '<img src="' + url + '" class="sendImg">'
+			}
 			let isGroup = 1
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
@@ -490,9 +503,9 @@ export default {
 				is_group: isGroup, //是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
 				to_uid: this.Talkinfo.uid, //好友的uid 主要不是uuid
 				group_id: this.Talkinfo.groupId, //群消息 id
-				type: 0, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
+				type: type, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
 				body: sendBody, //文字信息内容
-				file_url: '' //非文字内容的资源地址（如：图片或视频，需要传这个）
+				file_url: fileUrl //非文字内容的资源地址（如：图片或视频，需要传这个）
 			}
 			self.wait = true
 			self.init()
@@ -560,10 +573,12 @@ export default {
 		},
 		selectTalk(data) {
 			let msgType = 2
+			console.log(data.msgType)
 			if (data.hasOwnProperty('msgType')) {
 				msgType = data.msgType
 				delete data.msgType
 			}
+			console.log(msgType)
 			if (data.type === 'friends') {
 				let info = ''
 				if (data.uid === this.mUid) {
@@ -584,6 +599,7 @@ export default {
 				if (info !== '') {
 					data.head_url = info.head_url
 					data.nick = info.nick
+					console.log(msgType)
 					if (msgType === 3) {
 						data.list[0].head_url = info.head_url
 					}
@@ -697,9 +713,9 @@ export default {
 					return e.friend_uid
 				})
 				const rData = data.friends.reduce((res, item, index) => {
-					item['py'] = (pinyin(item.nick.substring(0, 1), {
-						style: pinyin.STYLE_FIRST_LETTER
-					}))[0][0].toUpperCase()
+					/* eslint-disable */
+					item['py'] = pinyinUtil.getFirstLetter(item.nick.substring(0, 1)).toUpperCase()
+					/* eslint-disable */
 					item['index'] = index
 					if (item['nick_mark'] !== '') {
 						item['nick'] = item['nick_mark']
@@ -727,9 +743,9 @@ export default {
 					return -1
 				})
 				const gData = data.groups.reduce((res, item, index) => {
-					item['py'] = (pinyin(item.title.substring(0, 1), {
-						style: pinyin.STYLE_FIRST_LETTER
-					}))[0][0].toUpperCase()
+					/* eslint-disable */
+					item['py'] = pinyinUtil.getFirstLetter(item.title.substring(0, 1)).toUpperCase()
+					/* eslint-disable */
 					item['nick'] = item['title']
 					item['index'] = index
 					res[index] = item
@@ -806,6 +822,17 @@ export default {
 		},
 		websocketclose() {
 			this.$socket.emit('disconnect', 1)
+		},
+		fatherSend(e, type = 1) {
+			if (type === 1) {
+				this.loading = false
+				if (e.result === 1) {
+					const url = e.url
+					this.sendMsg(4, url)
+				}
+			} else {
+				this.loading = true
+			}
 		}
 	},
 	destroyed() {

@@ -11,7 +11,6 @@ import './styles/global.scss'
 // import * as socketApi from './util/socket'
 import VueSocketio from 'vue-socket.io'
 // import VueJsonp from 'vue-jsonp'
-import axios from './util/axios'
 Vue.use(new VueSocketio({
 	debug: true,
 	connection: 'http://211.149.162.202:6821'
@@ -24,7 +23,6 @@ Vue.use(new VueSocketio({
 // Vue.prototype.socketApi = socketApi
 Vue.config.productionTip = false
 // Vue.use(VueJsonp)
-Vue.prototype.axios = axios
 // Vue.use(pinyin)
 Vue.use(Vuex)
 Vue.use(ElementUI)

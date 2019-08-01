@@ -2,12 +2,16 @@
 	<div id="wangeditor">
 		<el-upload
 			id="uploadEl"
-			:headers="myHeaders"
 			:multiple="false"
+			action="http://api.oyxin.cn/bootapi/upload.php"
 			:show-file-list="false"
 			accept=".jpg,.jpeg,.png,.gif,.zip,.pdf,.rar"
 			:limit="1"
-			:http-request="fileUpload">
+			:on-success="success"
+			:file-list="fileList"
+			ref="elUpload"
+			:before-upload="before"
+		>
 			<div class="w-e-menu"><i class="i-file"></i></div>
 		</el-upload>
 		<div ref="emoticonPanel" class="panel-control">
@@ -18,13 +22,19 @@
 <script>
 import E from 'wangeditor'
 import {emojiList} from '@/util/util.js'
-import crypto from 'crypto'
 export default {
 	name: 'editor',
 	data() {
 		return {
 			editor: '',
-			myHeaders: {}
+			myHeaders: {},
+			fileList: []
+		}
+	},
+	props: {
+		fatherSend: {
+			type: Function,
+			default: null
 		}
 	},
 	methods: {
@@ -61,63 +71,19 @@ export default {
 		setFocus() {
 			this.editor.$textElem.focus()
 		},
-		sign(key, secret, method, uri, date, policy = null, md5 = null) {
-			const elems = [];
-			[method, uri, date, policy, md5].forEach(item => {
-				if (item != null) {
-					elems.push(item)
-				}
-			})
-			const value = elems.join('&')
-			console.log(value)
-			const auth = this.hmacsha1(secret, value)
-			return `UPYUN ${key}:${auth}`
+		before() {
+			this.fatherSend('', 2)
 		},
-		MD5(value) {
-			return crypto.createHash('md5').update(value).digest('hex')
-		},
-		hmacsha1(secret, value) {
-			return crypto.createHmac('sha1', secret).update(value, 'utf-8').digest().toString('base64')
-		},
-		fileUpload(e) {
-			const _this = this
-			/*this.$jsonp(_this.action, { file: e.file }).then(e => {
-				console.log(e)
-			})*/
-			/*_this.axios.post('/chaoxchat/upyun-php-sdk-3.3.0/php-sdk/examples/client-upload/policy.php', { save_path: e.file.name }, e.headers, (res) => {
-				console.log(res)
-			})
-			console.log(e.file.name)*/
-			console.log(e.headers)
-			_this.axios.post('/mixinimage', { file: e.file }, e.headers, (res) => {
-				console.log(1, res)
-			})
+		success(e) {
+			this.loading = false
+			this.fileList = []
+			this.fatherSend(e)
 		}
 	},
 	mounted() {
 		this.$nextTick(function() {
 			this.init()
 		})
-		const date = new Date().toGMTString()
-		const key = 'downloadapk'
-		const secret = 'nice8888'
-		const method = 'GET'
-		const uri = '/mixinimage'
-
-		/*console.log(this.MD5('secret'))
-		console.log(this.sign(key, this.MD5(secret), method, uri, date)) // 上传，处理，内容识别有存储
-		console.log(this.sign(key, secret, method, uri, date))// 内容识别无存储，容器云*/
-		/*var options = {
-			'bucket': uri,
-			'save-key': '/{year}/{mon}/{day}/{filemd5}{.suffix}',
-			'expiration': Math.floor(new Date().getTime() / 1000) + 86400
-		}
-		var policy = window.btoa(JSON.stringify(options));*/
-		this.myHeaders = {
-			'Authorization': this.sign(key, this.MD5(secret), method, uri, date),
-			'Content-Type': 'application/json',
-			'X-Date': date
-		}
 	}
 }
 </script>
@@ -155,6 +121,7 @@ export default {
 		display: flex !important;
 		margin: 15px 0px 15px 20px;
 		padding: 0 !important;
+		z-index: 1000!important;
 		.w-e-icon-happy {
 			overflow: hidden;
 			cursor: pointer;
