@@ -226,7 +226,7 @@
 									</div>
 									<div class="button-control">
 										<div class="btn-label">按下Shift+Enter换行</div>
-										<el-button @click="sendMsg">发送</el-button>
+										<el-button @click="sendMsg(0)">发送</el-button>
 									</div>
 								</div>
 							</div>
@@ -463,6 +463,7 @@ export default {
 			this.$refs.editor.setHtml(this.textarea)
 		},
 		sendMsg(type = 0, url = '') {
+			console.log('type', type)
 			let sendBody = ''
 			let fileUrl = ''
 			let body = ''
@@ -573,7 +574,7 @@ export default {
 		},
 		selectTalk(data) {
 			let msgType = 2
-			console.log(data.msgType)
+			console.log('data', data)
 			if (data.hasOwnProperty('msgType')) {
 				msgType = data.msgType
 				delete data.msgType
@@ -623,10 +624,12 @@ export default {
 					}
 				}
 			}
-			console.log('talkList', this.TalkList)
 			const self = this
 			let length = 0
 			if (this.TalkList.length === 0) {
+				if (data.uid === this.mUid) {
+					data.uid = data.from_uid
+				}
 				this.TalkList = [data]
 			} else {
 				let body = self.$refs.editor.getHtml().replace('<p>', '')
@@ -646,6 +649,8 @@ export default {
 					} else {
 						findId = data.uid
 					}
+					console.log('findId', findId)
+					console.log('TalkList', this.TalkList)
 					const findIndex = this.TalkList.findIndex(n => n.uid === findId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.uid === findId)]

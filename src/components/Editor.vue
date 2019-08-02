@@ -5,7 +5,7 @@
 			:multiple="false"
 			action="http://api.oyxin.cn/bootapi/upload.php"
 			:show-file-list="false"
-			accept=".jpg,.jpeg,.png,.gif,.zip,.pdf,.rar"
+			accept=".jpg,.jpeg,.png,.gif"
 			:limit="1"
 			:on-success="success"
 			:file-list="fileList"
