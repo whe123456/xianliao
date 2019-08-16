@@ -182,8 +182,13 @@
 											<div :data-index="item.msgType" class="msg j-msg msg-chat message-out" v-else-if="item.msgType===2">
 												<div class="message-detail-b">
 													<div class="message-main j-message-main">
-														<div class="message-info blue">
+														<div class="message-info blue" v-if="item.type===0">
 															<div class="message-info-text"><span v-html="item.msg"></span></div>
+														</div>
+														<div class="message-info blue" v-else>
+															<viewer :images="[{src: item.msg}]">
+																<img :src="item.msg">
+															</viewer>
 														</div>
 														<div class="message-status">
 															<!--<i class="app-icon-bag i-waiting" v-show="wait && index === (Talkinfo.list.length-1)"></i>-->
@@ -205,8 +210,13 @@
 												</div>
 												<div class="message-detail-b">
 													<div class="message-main j-message-main">
-														<div class="message-info">
+														<div class="message-info" v-if="item.type===0">
 															<div class="message-info-text"><span v-html="item.msg"></span></div>
+														</div>
+														<div class="message-info blue" v-else>
+															<viewer :images="[{src: item.msg}]">
+																<img :src="item.msg">
+															</viewer>
 														</div>
 														<div class="message-status"></div>
 													</div>
@@ -230,18 +240,6 @@
 									</div>
 								</div>
 							</div>
-							<!--<div class="mc" v-show="show_member" @click="showmember"></div>
-							<div class="member-info" v-show="show_member" v-if="Talkinfo.type==='groups' && Talkinfo.member.length>0">
-								<div class="scroll-content">
-									<div class="member-list">
-										<div style="height: 100px;position: absolute;width: 100%;" v-show="show_Card" @click="showCard"></div>
-										<div class="member" v-for="(item, index) in Talkinfo.member" :key="index" @click="showCard1">
-											<el-avatar shape="square" :size="55" :src="item.squareUrl" class="user-avatar-second"></el-avatar>
-											<p>{{item.name}}</p>
-										</div>
-									</div>
-								</div>
-							</div>-->
 						</div>
 					</div>
 					<div class="main-inner-r" v-show="showActive ==='second'">
@@ -343,7 +341,9 @@ export default {
 			FidList: [],
 			GroupChild: 1, //1群页面2私聊页面，
 			showActive: '',
-			loading: false
+			loading: false,
+			showPic: false,
+			showPicSrc: ''
 		}
 	},
 	sockets: {
@@ -376,7 +376,8 @@ export default {
 							})
 						}
 					} else {
-						item.body = '<img src="' + item.file_url + '" class="sendImg">'
+						// item.body = '<img src="' + item.file_url + '" class="sendImg">'
+						item.body = item.file_url
 					}
 					self.selectTalk({
 						head_url: '',
@@ -387,7 +388,7 @@ export default {
 						from_uid: item.from_uid,
 						groupId: item.group_id,
 						newCount: tbData.length,
-						list: [{msg: item.body, head_url: headUrl, msgType: msgType}],
+						list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
 						type: type,
 						editor: '',
 						msgType: msgType
@@ -489,7 +490,8 @@ export default {
 				sendBody = matchVal.join('')
 			} else {
 				fileUrl = url
-				body = '<img src="' + url + '" class="sendImg">'
+				// body = '<img src="' + url + '" class="sendImg">'
+				body = url
 			}
 			let isGroup = 1
 			if (this.Talkinfo.type === 'friends') {
@@ -520,7 +522,7 @@ export default {
 				uid: self.Talkinfo.uid,
 				groupId: self.Talkinfo.groupId,
 				newCount: 0,
-				list: [{msg: body, head_url: self.meUrl, msgType: 2, wait: true}],
+				list: [{msg: body, head_url: self.meUrl, msgType: 2, wait: true, type: type}],
 				type: self.Talkinfo.type,
 				editor: '',
 				wait: true
@@ -535,6 +537,7 @@ export default {
 			})
 		},
 		createMsg(e) {
+			this.showPic = true
 			let info = {}
 			let type = ''
 			let groupId = ''
@@ -846,6 +849,10 @@ export default {
 	},
 	mounted() {
 		const _this = this
+		this.showPicSrc = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_86d58ae1.png'
+		this.showPic = true
+
+
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
 				_this.websocketclose()
