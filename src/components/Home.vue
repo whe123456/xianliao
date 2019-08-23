@@ -235,7 +235,7 @@
 										</div>
 									</div>
 									<div class="button-control">
-										<!--<div class="btn-label">按下Shift+Enter换行</div>-->
+										<div class="btn-label">按下Shift+Enter换行</div>
 										<el-button @click="sendMsg(0)">发送</el-button>
 									</div>
 								</div>
@@ -469,7 +469,7 @@ export default {
 			let fileUrl = ''
 			let body = ''
 			if (type === 0) {
-				body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '')
+				body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '\n')
 				if (body === '') {
 					return
 				}
@@ -875,8 +875,6 @@ export default {
 			const key = e.keyCode
 			if (key === 13 && !e.shiftKey) {
 				_this.sendMsg()
-			}else if (key === 13 && e.shiftKey) {
-				return false
 			}
 		}
 		/*const d = 'ehVdoN88KWFB+Mga9L8xOy5D2yVg0m7C7u4kf2qsfHmNHhdEJNqUEvN96lbh0NBUARXLSl/hwLQLN0NSqRcUby8iX6LcX+sHjh85MRGeIipjRSx2feKnFmbXZBTq3QwelQMp/nHpdst5rGHaO81YaIeqC5YpQ3xNFjF5yinM0TxNngISxEj0gPX2ptM8nUGeNblokALQolBfbIczAXvFJb8WPrwKp0v+MGUh8JWEEC2VY1X5G2av6tP9XZ2pR0+d93cSBMC++PV6V9aRdSKybnQVRRSSdGfNs5boSzjrJaEXcMh23n9plhshZy5FOLhvPeq/9rGIpSykxaQYmq+rPYxGc6/LeL5+/nNM8Muz466MrHfka4fhfeUWbFWzr6a4SeEcCb57WySPj3dD/IQ2tQ=='
