@@ -469,7 +469,7 @@ export default {
 			let fileUrl = ''
 			let body = ''
 			if (type === 0) {
-				body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '\n')
+				body = this.$refs.editor.getHtml().replace(new RegExp('<p>', 'g'), '').replace(new RegExp('</p>', 'g'), '').replace(new RegExp('<br>', 'g'), '\n').replace(new RegExp('&nbsp;', 'g'), '')
 				if (body === '') {
 					return
 				}
@@ -488,6 +488,8 @@ export default {
 					return match.join('')
 				})
 				sendBody = matchVal.join('')
+				console.log(sendBody)
+				return
 			} else {
 				fileUrl = url
 				// body = '<img src="' + url + '" class="sendImg">'
