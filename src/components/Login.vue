@@ -2,7 +2,7 @@
     <div class="wrapper">
 		<div class="app-login" v-if="qr">
 			<div class="login-scan">
-				<div class="title">密信</div>
+				<div class="title">伴伴</div>
 				<div class="scan-area" v-loading="loading">
 					<div class="qr-content timeout status" v-if="visible">
 						<p class="second">二维码失效</p>
@@ -14,11 +14,11 @@
 						</div>
 					</div>
 				</div>
-				<div class="tips-content"><div class="tips-main" @click="qrchange">请使用手机密信扫码登录</div></div>
+				<div class="tips-content"><div class="tips-main" @click="qrchange">请使用手机伴伴扫码登录</div></div>
 			</div>
 		</div>
 		<div class="login-scan" v-else>
-			<div class="ms-title" @click="qrchange">密信登录</div>
+			<div class="ms-title" @click="qrchange">伴伴登录</div>
 			<div class="ms-login" v-loading="loading">
 				<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px" class="demo-ruleForm">
 					<el-form-item prop="username">

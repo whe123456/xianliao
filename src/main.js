@@ -15,7 +15,7 @@ import 'viewerjs/dist/viewer.css'
 // import VueJsonp from 'vue-jsonp'
 Vue.use(new VueSocketio({
 	debug: true,
-	connection: 'http://211.149.162.202:6821'
+	connection: 'http://47.103.61.96:6821'
 }))
 /*Vue.use(new VueSocketio({
 	debug: true,

@@ -488,8 +488,8 @@ export default {
 					return match.join('')
 				})
 				sendBody = matchVal.join('')
-				console.log(sendBody)
-				return
+				// console.log(sendBody)
+				// return
 			} else {
 				fileUrl = url
 				// body = '<img src="' + url + '" class="sendImg">'
