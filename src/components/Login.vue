@@ -2,7 +2,7 @@
     <div class="wrapper">
 		<div class="app-login" v-if="qr">
 			<div class="login-scan">
-				<div class="title">伴伴</div>
+				<div class="title">密信</div>
 				<div class="scan-area" v-loading="loading">
 					<div class="qr-content timeout status" v-if="visible">
 						<p class="second">二维码失效</p>
@@ -14,11 +14,11 @@
 						</div>
 					</div>
 				</div>
-				<div class="tips-content"><div class="tips-main" @click="qrchange">请使用手机伴伴扫码登录</div></div>
+				<div class="tips-content"><div class="tips-main" @click="qrchange">请使用手机密信扫码登录</div></div>
 			</div>
 		</div>
 		<div class="login-scan" v-else>
-			<div class="ms-title" @click="qrchange">伴伴登录</div>
+			<div class="ms-title" @click="qrchange">密信登录</div>
 			<div class="ms-login" v-loading="loading">
 				<el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px" class="demo-ruleForm">
 					<el-form-item prop="username">
@@ -70,6 +70,7 @@ export default {
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
 			if (data.cmd === 1407) {
 				const info = Decrypt(data.data)
+				sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
 				sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 				this.$router.push('/')
 			} else if (data.cmd === 1405) {
@@ -105,8 +106,11 @@ export default {
 					var obj = Encrypt({userid: self.ruleForm.username, pass: sha256(self.ruleForm.password)})
 					self.$socket.emit('chatevent', {cmd: 1401, data: obj}, function(e) {
 						const info = Decrypt(e)
+						console.log(info)
+						console.log('loginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}), info)
 						self.loading = false
 						if (info.state === 1) {
+							sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
 							sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 							self.$router.push('/')
 						} else {
@@ -156,13 +160,46 @@ export default {
 		clearTimeout(this.tiemOut)
 	},
 	mounted() {
-		const Login = sessionStorage.getItem('Login')
-		console.log(Login)
-		if (Login !== null) {
-			this.$router.push('/')
+		const getKey = localStorage.getItem('type')
+		if (getKey === null) {
+			// this.$router.push({name: '/Check', params: {id: 1}})
+			this.$router.push('/Check')
 			return false
 		}
-		this.getQr()
+		const LoginInfo = sessionStorage.getItem('LoginInfo')
+		console.log('LoginInfo', JSON.parse(LoginInfo))
+		const self = this
+		var timerOne = window.setInterval(() => {
+			if (self.$socket) {
+				window.clearInterval(timerOne)
+				if (LoginInfo !== null) {
+					console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
+					self.$socket.emit('chatevent', {cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))}, function(e) {
+						const info = Decrypt(e)
+						console.log(info)
+						self.loading = false
+						if (info.state === 1) {
+							sessionStorage.setItem('LoginInfo', JSON.stringify({
+								userid: info.userinfo.userid,
+								s_code: info.s_code
+							}), info)
+							sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
+							self.$router.push('/')
+							return false
+						} else {
+							sessionStorage.removeItem('LoginInfo')
+						}
+					})
+				}
+				const Login = sessionStorage.getItem('Login')
+				console.log('Login', Login)
+				if (Login !== null) {
+					this.$router.push('/')
+					return false
+				}
+				this.getQr()
+			}
+		}, 500)
 	}
 }
 </script>

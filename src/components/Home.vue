@@ -70,7 +70,8 @@
 											<div class="option-line">
 												<div class="last-msg">
 													<span class="last-msg-quot"></span>
-													<span class="last-msg-text" v-html="item.lastText"></span>
+													<span class="last-msg-text" v-if="item.list[0].type==4">[图片]</span>
+													<span class="last-msg-text" v-else v-html="item.lastText"></span>
 												</div>
 												<div class="new-count" v-show="item.newCount!==0">{{item.newCount}}</div>
 											</div>
@@ -187,7 +188,7 @@
 														</div>
 														<div class="message-info blue" v-else>
 															<viewer :images="[{src: item.msg}]">
-																<img :src="item.msg">
+																<img :src="item.msg" class="messageImg">
 															</viewer>
 														</div>
 														<div class="message-status">
@@ -213,9 +214,9 @@
 														<div class="message-info" v-if="item.type===0">
 															<div class="message-info-text"><span v-html="item.msg"></span></div>
 														</div>
-														<div class="message-info blue" v-else>
+														<div class="message-info" v-else>
 															<viewer :images="[{src: item.msg}]">
-																<img :src="item.msg">
+																<img :src="item.msg" class="messageImg">
 															</viewer>
 														</div>
 														<div class="message-status"></div>
@@ -307,7 +308,7 @@ export default {
 		return {
 			squareUrl: require('../assets/defaultUser.png'),
 			meUrl: require('../assets/defaultUser.png'),
-			userName: '白犀牛',
+			userName: '登陆中',
 			input: '',
 			activeName: 'first',
 			TalkList: [],
@@ -396,15 +397,17 @@ export default {
 				})
 			}
 		},
-		disconnect() {
-			this.$socket.emit('reconnect')
+		disconnect(type = 1) {
+			this.$socket.emit('reconnect', type)
 		},
-		reconnect() {
+		reconnect(type = 1) {
 			const self = this
 			this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
 			})
-			sessionStorage.clear()
-			self.$router.push('/Login')
+			sessionStorage.removeItem('Login')
+			if (type === 2) {
+				self.$router.push('/Login')
+			}
 		},
 		connect() {
 			console.log('socket connected')
@@ -571,7 +574,9 @@ export default {
 					uid: uid,
 					groupId: groupId,
 					newCount: 0,
-					list: [],
+					list: [{
+						type: 0
+					}],
 					type: type,
 					editor: ''
 				}
@@ -579,7 +584,6 @@ export default {
 		},
 		selectTalk(data) {
 			let msgType = 2
-			console.log('data', data)
 			if (data.hasOwnProperty('msgType')) {
 				msgType = data.msgType
 				delete data.msgType
@@ -696,6 +700,7 @@ export default {
 				}
 			}
 			this.selectIndex = 0
+			console.log('TalkList', this.TalkList)
 			this.Talkinfo = this.TalkList[0]
 			this.activeName = 'first'
 			this.showActive = 'first'
@@ -758,6 +763,16 @@ export default {
 					/* eslint-disable */
 					item['nick'] = item['title']
 					item['index'] = index
+					const userInfoList = item.userInfoList.reduce((res, item, index) => {
+						item['nick'] = item['group_nick']?item['group_nick']:item['nick']
+						let arr1 = data.friends.filter( (value, index) => value['uid']==item['uid'])
+						if(arr1[0]){
+							item['nick'] = arr1[0]['nick_mark']?arr1[0]['nick_mark']:item['nick']
+						}
+						res[index] = item
+						return res
+					}, [])
+					console.log('userInfoList',userInfoList)
 					res[index] = item
 					return res
 				}, [])
@@ -784,7 +799,8 @@ export default {
 		},
 		closesocket() {
 			const _this = this
-			_this.websocketclose()
+			sessionStorage.clear()
+			_this.websocketclose(2)
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
@@ -817,21 +833,9 @@ export default {
 				this.Friendinfo = item
 				this.showActive = 'second'
 			}
-			/*switch (this.activeName) {
-			case 'first':
-				this.selectTalk(item)
-				break
-			case 'second':
-				// this.FriendClick(listindex,index)
-				this.Friendinfo = item
-				break
-			case 'three':
-				this.Groupinfo = item
-				break
-			}*/
 		},
-		websocketclose() {
-			this.$socket.emit('disconnect', 1)
+		websocketclose(type = 1) {
+			this.$socket.emit('disconnect', type)
 		},
 		fatherSend(e, type = 1) {
 			if (type === 1) {
@@ -862,59 +866,45 @@ export default {
 				window.onbeforeunload = null
 			}
 		}
-		const Login = sessionStorage.getItem('Login')
-		if (Login === null) {
-			this.$router.push('/Login')
-			return false
-		}
-		const LoginData = JSON.parse(Login)
-		this.userName = LoginData.nick
-		this.meUrl = LoginData.head_url
-		this.mUid = LoginData.userid
-		this.initWebSocket()
-
-		document.onkeydown = function(e) {
-			const key = e.keyCode
-			if (key === 13 && !e.shiftKey) {
-				_this.sendMsg()
-			}
-		}
-		/*const d = 'ehVdoN88KWFB+Mga9L8xOy5D2yVg0m7C7u4kf2qsfHmNHhdEJNqUEvN96lbh0NBUARXLSl/hwLQLN0NSqRcUby8iX6LcX+sHjh85MRGeIipjRSx2feKnFmbXZBTq3QwelQMp/nHpdst5rGHaO81YaIeqC5YpQ3xNFjF5yinM0TxNngISxEj0gPX2ptM8nUGeNblokALQolBfbIczAXvFJb8WPrwKp0v+MGUh8JWEEC2VY1X5G2av6tP9XZ2pR0+d93cSBMC++PV6V9aRdSKybnQVRRSSdGfNs5boSzjrJaEXcMh23n9plhshZy5FOLhvPeq/9rGIpSykxaQYmq+rPYxGc6/LeL5+/nNM8Muz466MrHfka4fhfeUWbFWzr6a4SeEcCb57WySPj3dD/IQ2tQ=='
-		const tbData = Decrypt(d)
-		tbData.forEach((item) => {
-			let msgType = 3
-			if (self.mUid !== item.to_uid) {
-				msgType = 2
-			}
-			let type = 'friends'
-			if (item.is_group === 1) {
-				type = 'groups'
-			}
-			let headUrl = self.meUrl
-			const arr = item.body.match(/\[(.+?)\]/g)
-			console.log(arr)
-			if (arr) {
-				arr.map((e) => {
-					const str = emojiListFind(e)
-					console.log(e)
-					item.body = item.body.replace(e, str)
-				})
-			}
-			this.selectTalk({
-				head_url: '',
-				nick: '',
-				lastTime: item.create_ts,
-				lastText: item.body,
-				uid: item.to_uid,
-				from_uid: item.from_uid,
-				groupId: item.group_id,
-				newCount: tbData.length,
-				list: [{msg: item.body, head_url: headUrl, msgType: msgType}],
-				type: type,
-				editor: '',
-				msgType: 3
+		const LoginInfo = sessionStorage.getItem('LoginInfo')
+		console.log('LoginInfo', JSON.parse(LoginInfo))
+		let Login = sessionStorage.getItem('Login')
+		let timeOut = 0
+		if (LoginInfo !== null && Login === null) {
+			console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
+			timeOut = 100
+			_this.$socket.emit('chatevent', {cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))}, function(e) {
+				const info = Decrypt(e)
+				console.log(info)
+				_this.loading = false
+				if (info.state === 1) {
+					sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}), info)
+					Login = JSON.stringify(info.userinfo)
+					sessionStorage.setItem('Login', Login)
+				} else {
+					sessionStorage.removeItem('LoginInfo')
+				}
 			})
-		})*/
+		}
+		setTimeout(function() {
+			console.log(Login)
+			if (Login === null) {
+				_this.$router.push('/Login')
+				return false
+			}
+			const LoginData = JSON.parse(Login)
+			_this.userName = LoginData.nick
+			_this.meUrl = LoginData.head_url
+			_this.mUid = LoginData.userid
+			_this.initWebSocket()
+
+			document.onkeydown = function(e) {
+				const key = e.keyCode
+				if (key === 13 && !e.shiftKey) {
+					_this.sendMsg()
+				}
+			}
+		}, timeOut)
 	}
 }
 </script>

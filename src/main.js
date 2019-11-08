@@ -1,5 +1,7 @@
 // The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
+import {getCode} from '@/api/api'
+import VueSocketio from 'vue-socket.io'
 import Vue from 'vue'
 import App from './App'
 import router from './router'
@@ -7,25 +9,17 @@ import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import Vuex from 'vuex'
 import './styles/global.scss'
-// import { pinyin } from 'pinyin'
-// import * as socketApi from './util/socket'
-import VueSocketio from 'vue-socket.io'
 import Viewer from 'v-viewer'
 import 'viewerjs/dist/viewer.css'
-// import VueJsonp from 'vue-jsonp'
-Vue.use(new VueSocketio({
-	debug: true,
-	connection: 'http://47.103.61.96:6821'
-}))
-/*Vue.use(new VueSocketio({
-	debug: true,
-	connection: 'http://192.168.0.136:6821'
-}))*/
-// WebSocket封装方法
-// Vue.prototype.socketApi = socketApi
+// .history.current.query.type
+console.log(router.app)
+getCode().then(e => {
+	Vue.use(new VueSocketio({
+		debug: true,
+		connection: 'http://' + e.web_server_ip + ':' + e.web_server_port
+	}))
+})
 Vue.config.productionTip = false
-// Vue.use(VueJsonp)
-// Vue.use(pinyin)
 Vue.use(Vuex)
 Vue.use(ElementUI)
 Vue.use(Viewer)
