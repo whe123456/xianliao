@@ -8,6 +8,7 @@
 						<el-input v-model="ruleForm.fwq" placeholder="服务器"></el-input>
 					</el-form-item>
 					<div class="login-btn">
+						<el-button type="primary" @click="back" style="background: #fff;color:#409EFF" v-if="visible">返回</el-button>
 						<el-button type="primary" @click="submitForm('ruleForm')">确定</el-button>
 					</div>
 				</el-form>
@@ -29,26 +30,32 @@ export default {
 				]
 			},
 			loading: false,
-			qr: true,
-			tiemOut: '',
-			visible: false,
-			qrcode: '',
-			count: 1
+			visible: true
 		}
 	},
 	methods: {
 		submitForm(formName) {
 			const self = this
-			this.loading = true
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
-					localStorage.setItem('type', self.ruleForm.fwq)
-					self.$router.go(-1)
+					self.loading = true
+					self.$cookies.set('type', self.ruleForm.fwq)
+					self.$router.push('/Login')
 				} else {
 					console.log('error submit!!')
 					return false
 				}
 			})
+		},
+		back() {
+			this.$router.go(-1)
+		}
+	},
+	mounted() {
+		const getKey = this.$cookies.get('type')
+		console.log('getKey', getKey)
+		if (getKey === null) {
+			this.visible = false
 		}
 	}
 }
@@ -68,10 +75,12 @@ export default {
         background: #fff;
     }
     .login-btn{
+		display: flex;
+		justify-content: center;
     }
     .login-btn button{
-        width:100%;
         height:36px;
+		flex: 1;
     }
 	.app-login {
 		position: absolute;

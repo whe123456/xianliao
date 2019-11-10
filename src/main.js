@@ -11,6 +11,7 @@ import Vuex from 'vuex'
 import './styles/global.scss'
 import Viewer from 'v-viewer'
 import 'viewerjs/dist/viewer.css'
+import VueCookies from 'vue-cookies'
 // .history.current.query.type
 console.log(router.app)
 getCode().then(e => {
@@ -23,6 +24,7 @@ Vue.config.productionTip = false
 Vue.use(Vuex)
 Vue.use(ElementUI)
 Vue.use(Viewer)
+Vue.use(VueCookies)
 
 Viewer.setDefaults({
 	'inline': false,

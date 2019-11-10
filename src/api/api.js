@@ -1,7 +1,7 @@
 import axios from 'axios'
 export function getCode() {
 	localStorage.removeItem('type')
-	const getKey = localStorage.getItem('type')?localStorage.getItem('type'):'mixin'
+	const getKey = localStorage.getItem('type') ? localStorage.getItem('type') : 'mixin'
 	// const getKey = 'banban'
 	return new Promise(function(resolve, reject) {
 		axios.get('/chaoxchat/api/server_config.php?server_id=' + getKey).then(function(response) {

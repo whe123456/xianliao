@@ -24,6 +24,7 @@
     "socket.io-client": "^2.2.0",
     "v-viewer": "^1.4.2",
     "vue": "^2.5.2",
+    "vue-cookies": "^1.5.13",
     "vue-jsonp": "^0.1.8",
     "vue-quill-editor": "^3.0.6",
     "vue-router": "^3.0.1",

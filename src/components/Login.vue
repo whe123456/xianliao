@@ -1,5 +1,6 @@
 <template>
     <div class="wrapper">
+		<div class="server" @click="Server">切换服务器</div>
 		<div class="app-login" v-if="qr">
 			<div class="login-scan">
 				<div class="title">密信</div>
@@ -131,6 +132,9 @@ export default {
 		qrchange() {
 			this.qr = !this.qr
 		},
+		Server() {
+			this.$router.push('/Check')
+		},
 		getQr() {
 			const self = this
 			this.count = 1
@@ -160,9 +164,9 @@ export default {
 		clearTimeout(this.tiemOut)
 	},
 	mounted() {
-		const getKey = localStorage.getItem('type')
+		const getKey = this.$cookies.get('type')
+		console.log('getKey', getKey)
 		if (getKey === null) {
-			// this.$router.push({name: '/Check', params: {id: 1}})
 			this.$router.push('/Check')
 			return false
 		}
@@ -204,6 +208,13 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+	.server{
+		position: fixed;
+		top: 10px;
+		right: 20px;
+		color: white;
+		cursor: pointer;
+	}
 	.ms-title{
 		text-align: center;
 		font-size:30px;
