@@ -1,8 +1,26 @@
 // The Vue build version to load with the `import` command
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
-import {getCode} from '@/api/api'
+// import {getCode} from '@/api/api'
 import VueSocketio from 'vue-socket.io'
 import Vue from 'vue'
+import conf from '../static/conf.js'
+console.log(conf())
+/* eslint-disable */
+/*getCode().then(e => {
+	/!*Vue.use(new VueSocketio({
+		debug: true,
+		connection: 'http://' + e.web_server_ip + ':' + e.web_server_port
+	}))*!/
+	Vue.use(new VueSocketio({
+		debug: true,
+		connection: 'http://211.149.162.202:6821'
+	}))
+})*/
+Vue.use(new VueSocketio({
+	debug: true,
+	connection: conf()
+}))
+/* eslint-disable */
 import App from './App'
 import router from './router'
 import ElementUI from 'element-ui'
@@ -11,20 +29,11 @@ import Vuex from 'vuex'
 import './styles/global.scss'
 import Viewer from 'v-viewer'
 import 'viewerjs/dist/viewer.css'
-import VueCookies from 'vue-cookies'
-// .history.current.query.type
-console.log(router.app)
-getCode().then(e => {
-	Vue.use(new VueSocketio({
-		debug: true,
-		connection: 'http://' + e.web_server_ip + ':' + e.web_server_port
-	}))
-})
 Vue.config.productionTip = false
 Vue.use(Vuex)
 Vue.use(ElementUI)
 Vue.use(Viewer)
-Vue.use(VueCookies)
+// Vue.use(VueCookies)
 
 Viewer.setDefaults({
 	'inline': false,

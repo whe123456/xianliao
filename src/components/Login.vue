@@ -1,6 +1,6 @@
 <template>
     <div class="wrapper">
-		<div class="server" @click="Server">切换服务器</div>
+		<!--<div class="server" @click="Server">切换服务器</div>-->
 		<div class="app-login" v-if="qr">
 			<div class="login-scan">
 				<div class="title">密信</div>
@@ -69,8 +69,10 @@ export default {
 			console.log('connect')
 		},
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
+			console.log(data)
 			if (data.cmd === 1407) {
 				const info = Decrypt(data.data)
+				console.log(info)
 				sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
 				sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 				this.$router.push('/')
@@ -164,12 +166,13 @@ export default {
 		clearTimeout(this.tiemOut)
 	},
 	mounted() {
-		const getKey = this.$cookies.get('type')
+		// const getKey = this.$cookies.get('type')
+		/*const getKey = localStorage.getItem('type')
 		console.log('getKey', getKey)
 		if (getKey === null) {
 			this.$router.push('/Check')
 			return false
-		}
+		}*/
 		const LoginInfo = sessionStorage.getItem('LoginInfo')
 		console.log('LoginInfo', JSON.parse(LoginInfo))
 		const self = this

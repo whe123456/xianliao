@@ -39,8 +39,11 @@ export default {
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
 					self.loading = true
-					self.$cookies.set('type', self.ruleForm.fwq)
-					self.$router.push('/Login')
+					/*self.$cookies.set('type', self.ruleForm.fwq)
+					self.$cookies.set('reload', 1)*/
+					localStorage.setItem('type', self.ruleForm.fwq)
+					localStorage.setItem('reload', 1)
+					self.$router.go(0)
 				} else {
 					console.log('error submit!!')
 					return false
@@ -52,7 +55,22 @@ export default {
 		}
 	},
 	mounted() {
+		/*const reload = this.$cookies.get('reload')
+		if (reload === '1') {
+			this.$cookies.remove('reload')
+			this.$router.go(-1)
+		}
 		const getKey = this.$cookies.get('type')
+		console.log('getKey', getKey)
+		if (getKey === null) {
+			this.visible = false
+		}*/
+		const reload = localStorage.getItem('reload')
+		if (reload === '1') {
+			localStorage.removeItem('reload')
+			this.$router.push('/Login')
+		}
+		const getKey = localStorage.getItem('type')
 		console.log('getKey', getKey)
 		if (getKey === null) {
 			this.visible = false
