@@ -5,17 +5,6 @@ import VueSocketio from 'vue-socket.io'
 import Vue from 'vue'
 import conf from '../static/conf.js'
 console.log(conf())
-/* eslint-disable */
-/*getCode().then(e => {
-	/!*Vue.use(new VueSocketio({
-		debug: true,
-		connection: 'http://' + e.web_server_ip + ':' + e.web_server_port
-	}))*!/
-	Vue.use(new VueSocketio({
-		debug: true,
-		connection: 'http://211.149.162.202:6821'
-	}))
-})*/
 Vue.use(new VueSocketio({
 	debug: true,
 	connection: conf()

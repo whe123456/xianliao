@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import {Decrypt, Encrypt} from '@/util/aes.js'
+import {Decrypt, Encrypt, getUrlKey} from '@/util/aes.js'
 import QRCode from 'qrcodejs2' // 引入qrcode
 let sha256 = require('js-sha256').sha256
 export default {
@@ -173,8 +173,15 @@ export default {
 			this.$router.push('/Check')
 			return false
 		}*/
+		const reload = sessionStorage.getItem('reload')
+		console.log('reload', reload, typeof reload)
+		if (reload === '1') {
+			sessionStorage.removeItem('reload')
+			this.$router.go(0)
+		}
+		sessionStorage.setItem('serverName', getUrlKey('server'))
 		const LoginInfo = sessionStorage.getItem('LoginInfo')
-		console.log('LoginInfo', JSON.parse(LoginInfo))
+		console.log('LoginInfostart', JSON.parse(LoginInfo))
 		const self = this
 		var timerOne = window.setInterval(() => {
 			if (self.$socket) {

@@ -49,3 +49,9 @@ export function Decrypt(word, keyStr, ivStr) {
 	var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8)
 	return JSON.parse(decryptedStr.toString())
 }
+
+export function getUrlKey(name) {
+	/* eslint-disable */
+	return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.href) || [, ''])[1].replace(/\+/g, '%20')) || null
+	/* eslint-disable */
+}

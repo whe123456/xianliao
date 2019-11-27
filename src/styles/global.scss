@@ -202,3 +202,16 @@ table {
 	max-width: 200px;
 	max-height: 200px;
 }
+.userNick{
+	font-size: 14px;
+	width: 20px;
+	position: relative;
+	height: 25px;
+}
+.userNick>div{
+	position: absolute;
+	max-width: 300px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}

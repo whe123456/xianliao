@@ -13,6 +13,7 @@
 								<i class="i_menu"></i>
 							</span>
 							<el-dropdown-menu slot="dropdown">
+								<el-dropdown-item disabled v-if="serverName">{{serverName}}</el-dropdown-item>
 								<!--<el-dropdown-item><i class="el_icon-bell"></i>关闭桌面通知</el-dropdown-item>-->
 								<el-dropdown-item><i class="el_icon-button"></i>退出</el-dropdown-item>
 							</el-dropdown-menu>
@@ -210,6 +211,7 @@
 													</el-avatar>
 												</div>
 												<div class="message-detail-b">
+													<div class="userNick" v-if="Talkinfo.type==='groups'"><div>{{item.nick}}</div></div>
 													<div class="message-main j-message-main">
 														<div class="message-info" v-if="item.type===0">
 															<div class="message-info-text"><span v-html="item.msg"></span></div>
@@ -344,7 +346,8 @@ export default {
 			showActive: '',
 			loading: false,
 			showPic: false,
-			showPicSrc: ''
+			showPicSrc: '',
+			serverName: ''
 		}
 	},
 	sockets: {
@@ -352,8 +355,12 @@ export default {
 			const self = this
 			if (data.cmd === 1405) {
 				const info = Decrypt(data.data)
-				this.$alert(info, '提示', {
-					confirmButtonText: '确定'
+				const _this = this
+				_this.$alert(info, '提示', {
+					confirmButtonText: '确定',
+					callback: () => {
+						_this.closesocket(3)
+					}
 				})
 			} else if (data.cmd === 1403) {
 				const tbData = Decrypt(data.data)
@@ -406,6 +413,9 @@ export default {
 			})
 			sessionStorage.removeItem('Login')
 			if (type === 2) {
+				self.$router.push('/Login')
+			} else if (type === 3) {
+				sessionStorage.setItem('reload', '1')
 				self.$router.push('/Login')
 			}
 		},
@@ -555,6 +565,7 @@ export default {
 					if (info.uid === this.mUid) {
 						return
 					}
+					console.log(this.FidList)
 					if (!this.FidList.includes(info.uid)) {
 						this.$message('不是好友关系')
 						return
@@ -583,6 +594,7 @@ export default {
 			this.selectTalk(Talk)
 		},
 		selectTalk(data) {
+			console.log('data', data)
 			let msgType = 2
 			if (data.hasOwnProperty('msgType')) {
 				msgType = data.msgType
@@ -623,12 +635,14 @@ export default {
 					}
 				})
 				if (info !== '') {
+					console.log('info', info)
 					data.head_url = info.head_url
-					data.nick = info.nick
+					data.nick = info.nick + '(' + info.userInfoList.length + ')'
 					if (msgType === 3) {
 						const findUser = info.userInfoList.find(n => n.uid === data.from_uid)
 						if (typeof findUser !== 'undefined') {
 							data.list[0].head_url = findUser.head_url
+							data.list[0].nick = findUser.nick
 						}
 					}
 				}
@@ -724,7 +738,7 @@ export default {
 					self.websocketclose()
 					return
 				}
-				this.FidList = data.friends.map((e) => {
+				self.FidList = data.friends.map((e) => {
 					return e.friend_uid
 				})
 				const rData = data.friends.reduce((res, item, index) => {
@@ -797,10 +811,10 @@ export default {
 				})
 			})
 		},
-		closesocket() {
+		closesocket(type=2) {
 			const _this = this
 			sessionStorage.clear()
-			_this.websocketclose(2)
+			_this.websocketclose(type)
 		},
 		querySearch(queryString, cb) {
 			// 调用 callback 返回建议列表的数据
@@ -854,6 +868,9 @@ export default {
 		this.websocketclose()
 	},
 	mounted() {
+		if (sessionStorage.getItem('serverName')!== null && sessionStorage.getItem('serverName')!== 'null') {
+			this.serverName = sessionStorage.getItem('serverName')
+		}
 		const _this = this
 		this.showPicSrc = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_86d58ae1.png'
 		this.showPic = true
@@ -905,6 +922,66 @@ export default {
 				}
 			}
 		}, timeOut)
+		/*const self = this
+		setTimeout(function() {
+		const tbData = [{
+			body: ".",
+			body_id: 985560,
+			create_ts: "2019-11-19 14:56:16",
+			file_time: 0,
+			file_url: "",
+			from_create_app: 1,
+			from_uid: 10925,
+			group_id: 189,
+			is_group: 1,
+			is_sync: 0,
+			is_systemmsg: 0,
+			is_web_receive: 0,
+			message_type: 0,
+			sign: "10925874491574146576808",
+			state: 0,
+			to_uid: 10926,
+			type: 0,
+			upload_id: 0,
+		}]
+		tbData.forEach((item) => {
+			let msgType = 3
+			if (self.mUid !== item.to_uid) {
+				msgType = 2
+			}
+			let type = 'friends'
+			if (item.is_group === 1) {
+				type = 'groups'
+			}
+			let headUrl = self.meUrl
+			if (item.type === 0) {
+				const arr = item.body.match(/\[(.+?)\]/g)
+				if (arr) {
+					arr.map((e) => {
+						const str = emojiListFind(e)
+						item.body = item.body.replace(e, str)
+					})
+				}
+			} else {
+				// item.body = '<img src="' + item.file_url + '" class="sendImg">'
+				item.body = item.file_url
+			}
+			self.selectTalk({
+				head_url: '',
+				nick: '',
+				lastTime: item.create_ts,
+				lastText: item.body,
+				uid: item.to_uid,
+				from_uid: item.from_uid,
+				groupId: item.group_id,
+				newCount: tbData.length,
+				list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
+				type: type,
+				editor: '',
+				msgType: msgType
+			})
+		})
+		}, 2000)*/
 	}
 }
 </script>
@@ -923,7 +1000,8 @@ export default {
 			width:0;
 		}
 		.el-scrollbar__wrap::-webkit-scrollbar-thumb{
-			background-color:rgba(0,0,0,.4);
+			/*background-color:rgba(0,0,0,.4);*/
+			background-color:rgba(220,220,220,1);
 		}
 	}
 </style>
@@ -1441,7 +1519,8 @@ export default {
 			height: 8px;
 		}
 		.friendList::-webkit-scrollbar-thumb{
-			background-color:rgba(0,0,0,.4);
+			/*background-color:rgba(0,0,0,.4);*/
+			background-color:rgba(220,220,220,1);
 		}
 	}
 	.el_icon_select{
@@ -1546,7 +1625,8 @@ export default {
 			height: 8px;
 		}
 		.scroll-content::-webkit-scrollbar-thumb{
-			background-color:rgba(0,0,0,.4);
+			/*background-color:rgba(0,0,0,.4);*/
+			background-color:rgba(220,220,220,1);
 		}
 		.scroll-content {
 			max-height: 290px;
