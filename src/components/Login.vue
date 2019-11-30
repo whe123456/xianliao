@@ -110,7 +110,6 @@ export default {
 					self.$socket.emit('chatevent', {cmd: 1401, data: obj}, function(e) {
 						const info = Decrypt(e)
 						console.log(info)
-						console.log('loginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}), info)
 						self.loading = false
 						if (info.state === 1) {
 							sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
@@ -202,6 +201,9 @@ export default {
 							return false
 						} else {
 							sessionStorage.removeItem('LoginInfo')
+							self.$alert(info.msg, '提示', {
+								confirmButtonText: '确定'
+							})
 						}
 					})
 				}

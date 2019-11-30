@@ -563,13 +563,15 @@ export default {
 				groupId = info.group_id
 				if (this.GroupChild === 2) {
 					if (info.uid === this.mUid) {
+						this.$message('你不能给自己发送消息')
 						return
 					}
-					console.log(this.FidList)
 					if (!this.FidList.includes(info.uid)) {
 						this.$message('不是好友关系')
 						return
 					}
+					type = 'friends'
+					uid = info.uid
 				}
 			} else {
 				info = this.Friendinfo
@@ -593,7 +595,7 @@ export default {
 				}
 			this.selectTalk(Talk)
 		},
-		selectTalk(data) {
+		selectTalk(data, check = true) {
 			console.log('data', data)
 			let msgType = 2
 			if (data.hasOwnProperty('msgType')) {
@@ -649,7 +651,9 @@ export default {
 			}
 			const self = this
 			let length = 0
+			console.log('test', data.type)
 			if (this.TalkList.length === 0) {
+				check = true
 				if (data.uid === this.mUid) {
 					data.uid = data.from_uid
 				}
@@ -673,7 +677,6 @@ export default {
 						findId = data.uid
 					}
 					console.log('findId', findId)
-					console.log('TalkList', this.TalkList)
 					const findIndex = this.TalkList.findIndex(n => n.uid === findId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.uid === findId)]
@@ -694,6 +697,7 @@ export default {
 					}
 				} else {
 					const findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
+					console.log(findIndex)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
 						if (msgType === 3) {
@@ -713,9 +717,13 @@ export default {
 					}
 				}
 			}
-			this.selectIndex = 0
 			console.log('TalkList', this.TalkList)
-			this.Talkinfo = this.TalkList[0]
+			if (check) {
+				this.selectIndex = 0
+				this.Talkinfo = this.TalkList[0]
+			} else {
+				this.selectIndex++
+			}
 			this.activeName = 'first'
 			this.showActive = 'first'
 			this.$nextTick(() => {
@@ -979,9 +987,9 @@ export default {
 				type: type,
 				editor: '',
 				msgType: msgType
-			})
+			},false)
 		})
-		}, 2000)*/
+		}, 6000)*/
 	}
 }
 </script>

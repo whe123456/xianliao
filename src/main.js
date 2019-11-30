@@ -18,6 +18,7 @@ import Vuex from 'vuex'
 import './styles/global.scss'
 import Viewer from 'v-viewer'
 import 'viewerjs/dist/viewer.css'
+require('babel-polyfill')
 Vue.config.productionTip = false
 Vue.use(Vuex)
 Vue.use(ElementUI)
