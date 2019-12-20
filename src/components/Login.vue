@@ -1,6 +1,6 @@
 <template>
     <div class="wrapper">
-		<!--<div class="server" @click="Server">切换服务器</div>-->
+		<div class="server" @click="Server">切换服务器</div>
 		<div class="app-login" v-if="qr">
 			<div class="login-scan">
 				<div class="title">密信</div>
@@ -97,9 +97,9 @@ export default {
 	methods: {
 		submitForm(formName) {
 			const self = this
-			this.loading = true
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
+					this.loading = true
 					console.log(valid)
 					/*var obj = {
 						userid: '10925',
@@ -132,9 +132,12 @@ export default {
 		},
 		qrchange() {
 			this.qr = !this.qr
+			if (this.qr) {
+				this.getQr()
+			}
 		},
 		Server() {
-			this.$router.push('/Check')
+			location.href = 'http://api.oyxin.cn/mixinIndex/'
 		},
 		getQr() {
 			const self = this

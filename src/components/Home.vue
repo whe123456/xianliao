@@ -1,7 +1,7 @@
 <template>
 	<div class="wrapper">
 		<el-scrollbar class="app_main">
-			<el-container>
+			<el-container v-loading="online">
 				<div class="main-inner-l">
 					<div class="inner-l-header">
 						<div class="user-info">
@@ -293,6 +293,18 @@
 						</div>
 					</div>
 				</div>
+				<div v-show="UserSelect">
+					<el-input v-model="selectUserInfo" placeholder="请输入内容" ref="inputRef"></el-input>
+					<!--<div class="mc" @click="hideSelect"></div>-->
+					<!--<div class="selectUserList" :style="styleObject">
+						<div v-for="(user, index) in selectUserList" :key="index" class="theList">
+							<el-avatar class="user-avatar" shape="square" :size="30" :src="user.head_url">
+								<img :src="squareUrl"/>
+							</el-avatar>
+							<div class="dialogTitle">{{user.nick}}</div>
+						</div>
+					</div>-->
+				</div>
 			</el-container>
 		</el-scrollbar>
 	</div>
@@ -316,8 +328,7 @@ export default {
 			TalkList: [],
 			Talkinfo: {},
 			selectIndex: '',
-			FriendList: /*数组字段py 拼音 nick 名称 squareUrl 头像 sex性别 uid发送消息id */
-			[],
+			FriendList: [], /*数组字段py 拼音 nick 名称 squareUrl 头像 sex性别 uid发送消息id */
 			GroupList: [],
 			selectFriend: '',
 			selectGroup: '',
@@ -347,7 +358,12 @@ export default {
 			loading: false,
 			showPic: false,
 			showPicSrc: '',
-			serverName: ''
+			serverName: '',
+			selectUserList: [],
+			UserSelect: false,
+			selectUserInfo: '',
+			styleObject: {},
+			online: false
 		}
 	},
 	sockets: {
@@ -400,11 +416,13 @@ export default {
 						type: type,
 						editor: '',
 						msgType: msgType
-					})
+					}, false)
 				})
 			}
 		},
 		disconnect(type = 1) {
+			window.removeEventListener('online', this.updateOnlineStatus)
+			window.removeEventListener('offline', this.updateOnlineStatus)
 			this.$socket.emit('reconnect', type)
 		},
 		reconnect(type = 1) {
@@ -439,6 +457,10 @@ export default {
 			this.TalkClick = e
 			this.$refs.editor.setHtml(this.TalkList[e].editor)
 			this.focusEditor()
+			this.$nextTick(() => {
+				var div = document.getElementById('chat-body')
+				div.scrollTop = div.scrollHeight
+			})
 		},
 		focusEditor() {
 			this.$refs.editor.setFocus()
@@ -508,6 +530,14 @@ export default {
 				// body = '<img src="' + url + '" class="sendImg">'
 				body = url
 			}
+			const self = this
+			self.init()
+			self.textarea = ''
+			self.TalkList[0].newCount = 0
+			if ((body.match(/^[ ]*$/) && fileUrl.match(/^[ ]*$/)) || (body.match(/^\s+$/) && fileUrl.match(/^\s+$/)) || (body.match(/^[ ]+$/) && fileUrl.match(/^[ ]+$/)) || (body.match(/^\s*$/) && fileUrl.match(/^\s*$/))) {
+				return
+			}
+			console.log(JSON.stringify(body))
 			let isGroup = 1
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
@@ -515,7 +545,7 @@ export default {
 			if (this.showActive !== 'first') {
 				return
 			}
-			const self = this
+			let atList = ''
 			var obj = {
 				from_uid: this.mUid, //我自己的uid
 				is_group: isGroup, //是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
@@ -523,17 +553,15 @@ export default {
 				group_id: this.Talkinfo.groupId, //群消息 id
 				type: type, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
 				body: sendBody, //文字信息内容
-				file_url: fileUrl //非文字内容的资源地址（如：图片或视频，需要传这个）
+				file_url: fileUrl, //非文字内容的资源地址（如：图片或视频，需要传这个）
+				at_list: atList
 			}
 			self.wait = true
-			self.init()
-			self.textarea = ''
-			self.TalkList[0].newCount = 0
 			const length = self.selectTalk({
 				head_url: self.Talkinfo.head_url,
 				nick: self.Talkinfo.nick,
-				lastTime: '',
-				lastText: '',
+				lastTime: self.nowTime(),
+				lastText: sendBody,
 				uid: self.Talkinfo.uid,
 				groupId: self.Talkinfo.groupId,
 				newCount: 0,
@@ -542,14 +570,35 @@ export default {
 				editor: '',
 				wait: true
 			})
-			console.log(body)
+			console.log(sendBody)
 			self.$socket.emit('chatevent', {cmd: 1403, data: Encrypt(obj)}, function(e) {
 				const info = Decrypt(e)
+				console.log('backInfo', info)
 				if (info['state'] === 1) {
 					self.wait = false
 					self.TalkList[0].list[length].wait = false
 				}
 			})
+		},
+		nowTime() {
+			let myDate = new Date()
+			let year = myDate.getFullYear()
+			let month = myDate.getMonth() + 1
+			month = month > 10 ? month : '0' + month
+			let date = myDate.getDate()
+			date = date > 10 ? date : '0' + date
+			let hours = myDate.getHours()
+			let minutes = myDate.getMinutes()
+			let seconds = myDate.getSeconds()
+			hours = this.check(hours)
+			minutes = this.check(minutes)
+			seconds = this.check(seconds)
+			return year + '-' + month + '-' + date + ' ' + hours + ':' + minutes + ':' + seconds
+		},
+		check(i) { //  检验时间补零的方法
+			let num
+			i < 10 ? (num = '0' + i) : (num = i)
+			return num
 		},
 		createMsg(e) {
 			this.showPic = true
@@ -557,10 +606,12 @@ export default {
 			let type = ''
 			let groupId = ''
 			let uid = ''
+			let userList = ''
 			if (e === 'three') {
 				info = this.Groupinfo
 				type = 'groups'
 				groupId = info.group_id
+				userList = info.userInfoList
 				if (this.GroupChild === 2) {
 					if (info.uid === this.mUid) {
 						this.$message('你不能给自己发送消息')
@@ -578,6 +629,7 @@ export default {
 				type = 'friends'
 				uid = info.friend_uid
 			}
+			console.log(info)
 			const Talk =
 				{
 					head_url: info.head_url,
@@ -591,7 +643,8 @@ export default {
 						type: 0
 					}],
 					type: type,
-					editor: ''
+					editor: '',
+					userList: userList
 				}
 			this.selectTalk(Talk)
 		},
@@ -603,8 +656,8 @@ export default {
 				delete data.msgType
 			}
 			console.log(msgType)
+			let info = ''
 			if (data.type === 'friends') {
-				let info = ''
 				if (data.uid === this.mUid) {
 					this.FriendList.forEach((value) => {
 						const findinfo = value.info.find(n => n.uid === data.from_uid)
@@ -629,7 +682,6 @@ export default {
 					}
 				}
 			} else {
-				let info = ''
 				this.GroupList.forEach((value) => {
 					const findinfo = value.info.find(n => n.group_id === data.groupId)
 					if (typeof findinfo !== 'undefined') {
@@ -648,6 +700,11 @@ export default {
 						}
 					}
 				}
+			}
+			if (info === '') {
+				this.initWebSocket()
+				this.selectTalk(data, check)
+				return
 			}
 			const self = this
 			let length = 0
@@ -680,9 +737,9 @@ export default {
 					const findIndex = this.TalkList.findIndex(n => n.uid === findId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.uid === findId)]
+						TheFind[0].lastTime = data.lastTime
+						TheFind[0].lastText = data.lastText
 						if (msgType === 3) {
-							TheFind[0].lastTime = data.lastTime
-							TheFind[0].lastText = data.lastText
 							TheFind[0].newCount = TheFind[0].newCount + 1
 						}
 						TheFind[0].list = TheFind[0].list.concat(data.list)
@@ -700,9 +757,9 @@ export default {
 					console.log(findIndex)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
+						TheFind[0].lastTime = data.lastTime
+						TheFind[0].lastText = data.lastText
 						if (msgType === 3) {
-							TheFind[0].lastTime = data.lastTime
-							TheFind[0].lastText = data.lastText
 							TheFind[0].newCount = TheFind[0].newCount + 1
 						}
 						TheFind[0].list = TheFind[0].list.concat(data.list)
@@ -717,24 +774,24 @@ export default {
 					}
 				}
 			}
-			console.log('TalkList', this.TalkList)
+			console.log('checkInfo', check)
 			if (check) {
 				this.selectIndex = 0
 				this.Talkinfo = this.TalkList[0]
-			} else {
-				this.selectIndex++
-			}
-			this.activeName = 'first'
-			this.showActive = 'first'
-			this.$nextTick(() => {
-				var div = document.getElementById('chat-body')
-				div.scrollTop = div.scrollHeight
-			})
+				this.$nextTick(() => {
+					var div = document.getElementById('chat-body')
+					div.scrollTop = div.scrollHeight
+				})
 
-			self.tiemOut = setTimeout(function() {
-				self.$refs.editor.setHtml(self.TalkList[0].editor)
-				self.$refs.editor.setFocus()
-			}, 1)
+				self.tiemOut = setTimeout(function() {
+					self.$refs.editor.setHtml(self.TalkList[0].editor)
+					self.$refs.editor.setFocus()
+				}, 1)
+			} else {
+				const index = this.selectIndex + 1
+				this.talkClick(index)
+			}
+			this.handleClick('first')
 			return length
 		},
 		initWebSocket() { /*初始化weosocket*/
@@ -869,6 +926,48 @@ export default {
 			} else {
 				this.loading = true
 			}
+		},
+		selectUser(){
+			console.log(this.Talkinfo.userList)
+			if (this.Talkinfo.type === 'groups') {
+				this.$refs.inputRef.focus()
+				const styleInfo = this.$refs.editor.getTest()
+				this.styleObject = {
+					bottom: (styleInfo.bottom - 550) + 'px',
+					left: (styleInfo.left + 50) + 'px',
+				}
+				this.selectUserList = this.Talkinfo.userList
+				this.UserSelect = true
+				// this.$refs.editor.setFocus()
+			}
+		},
+		hideSelect() {
+			this.UserSelect = false
+		},
+		updateOnlineStatus(e) {
+			console.log(e.type)
+			if (e.type === 'offline'){
+				if(this.online){
+					return
+				}
+				this.online = true
+				this.$message.error('网络连接异常，请检查网络')
+			}else{
+				if(!this.online){
+					return
+				}
+				this.online = false
+				this.$confirm('网络连接恢复，是否重新登录?', '提示', {
+					confirmButtonText: '确定',
+					cancelButtonText: '取消',
+					type: 'warning'
+				}).then(() => {
+					this.$socket.emit('reconnect', 3)
+				}).catch(() => {
+					this.$socket.emit('reconnect', 2)
+				});
+			}
+
 		}
 	},
 	destroyed() {
@@ -883,7 +982,6 @@ export default {
 		this.showPicSrc = 'https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_86d58ae1.png'
 		this.showPic = true
 
-
 		window.onbeforeunload = function(e) {
 			if (_this.$route.fullPath === '/') {
 				_this.websocketclose()
@@ -891,10 +989,12 @@ export default {
 				window.onbeforeunload = null
 			}
 		}
+		window.addEventListener('online',  this.updateOnlineStatus)
+		window.addEventListener('offline', this.updateOnlineStatus)
 		const LoginInfo = sessionStorage.getItem('LoginInfo')
 		console.log('LoginInfo', JSON.parse(LoginInfo))
 		let Login = sessionStorage.getItem('Login')
-		let timeOut = 0
+		let timeOut = 10
 		if (LoginInfo !== null && Login === null) {
 			console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
 			timeOut = 100
@@ -928,68 +1028,71 @@ export default {
 				if (key === 13 && !e.shiftKey) {
 					_this.sendMsg()
 				}
+				/*if ((key === 50 || key === 229) && e.shiftKey) {
+					_this.selectUser()
+				}*/
 			}
 		}, timeOut)
 		/*const self = this
 		setTimeout(function() {
-		const tbData = [{
-			body: ".",
-			body_id: 985560,
-			create_ts: "2019-11-19 14:56:16",
+			const tbData = [{
+			at_list: "[]",
+			body: "http://filemixin.test.upcdn.net/2019/12/10925/1576652900/1.mp4",
+			body_id: 995681,
+			create_ts: "2019-12-02 09:34:13",
 			file_time: 0,
-			file_url: "",
-			from_create_app: 1,
-			from_uid: 10925,
-			group_id: 189,
+			from_create_app: 0,
+			from_uid: 10926,
+			group_id: 176,
 			is_group: 1,
 			is_sync: 0,
 			is_systemmsg: 0,
 			is_web_receive: 0,
 			message_type: 0,
-			sign: "10925874491574146576808",
+			sign: "10926302751575250453677",
 			state: 0,
-			to_uid: 10926,
-			type: 0,
-			upload_id: 0,
+			to_uid: 244,
+			type: 2,
+			upload_id: 0
 		}]
-		tbData.forEach((item) => {
-			let msgType = 3
-			if (self.mUid !== item.to_uid) {
-				msgType = 2
-			}
-			let type = 'friends'
-			if (item.is_group === 1) {
-				type = 'groups'
-			}
-			let headUrl = self.meUrl
-			if (item.type === 0) {
-				const arr = item.body.match(/\[(.+?)\]/g)
-				if (arr) {
-					arr.map((e) => {
-						const str = emojiListFind(e)
-						item.body = item.body.replace(e, str)
-					})
+			tbData.forEach((item) => {
+				let msgType = 3
+				if (self.mUid !== item.to_uid) {
+					msgType = 2
 				}
-			} else {
-				// item.body = '<img src="' + item.file_url + '" class="sendImg">'
-				item.body = item.file_url
-			}
-			self.selectTalk({
-				head_url: '',
-				nick: '',
-				lastTime: item.create_ts,
-				lastText: item.body,
-				uid: item.to_uid,
-				from_uid: item.from_uid,
-				groupId: item.group_id,
-				newCount: tbData.length,
-				list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
-				type: type,
-				editor: '',
-				msgType: msgType
-			},false)
-		})
-		}, 6000)*/
+				let type = 'friends'
+				if (item.is_group === 1) {
+					type = 'groups'
+				}
+				let headUrl = self.meUrl
+				if (item.type === 0) {
+					const arr = item.body.match(/\[(.+?)\]/g)
+					if (arr) {
+						arr.map((e) => {
+							const str = emojiListFind(e)
+							item.body = item.body.replace(e, str)
+						})
+					}
+				} else {
+					// item.body = '<img src="' + item.file_url + '" class="sendImg">'
+					item.body = item.file_url
+				}
+				self.selectTalk({
+					head_url: '',
+					nick: '',
+					lastTime: item.create_ts,
+					lastText: item.body,
+					uid: item.to_uid,
+					from_uid: item.from_uid,
+					groupId: item.group_id,
+					newCount: tbData.length,
+					list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
+					type: type,
+					editor: '',
+					msgType: msgType
+				},false)
+			})
+		}, 8000)*/
 	}
 }
 </script>
@@ -1750,6 +1853,34 @@ export default {
 	@media screen and (min-height: 841px) {
 		.app_main {
 			height: 82%;
+		}
+	}
+	.selectUserList {
+		position: fixed;
+		display: flex;
+		flex-direction: column;
+		background: #fff;
+		width: 200px;
+		max-height: 200px;
+		z-index: 1300;
+		box-shadow: 0 0 5px #bbb;
+		.theList{
+			display: flex;
+			align-items: center;
+			height: 40px;
+			cursor: pointer;
+			.el-avatar{
+				margin: 0 10px;
+			}
+			.dialogTitle{
+				width: 150px;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+		}
+		:hover{
+			background: #F8F0D3;
 		}
 	}
 </style>

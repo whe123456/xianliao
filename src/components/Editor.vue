@@ -74,6 +74,9 @@ export default {
 		before() {
 			this.fatherSend('', 2)
 		},
+		getTest() {
+			return this.$refs['editor'].getBoundingClientRect()
+		},
 		success(e) {
 			this.loading = false
 			this.fileList = []
