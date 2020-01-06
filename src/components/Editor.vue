@@ -40,7 +40,30 @@ export default {
 	methods: {
 		init() {
 			this.editor = new E(this.$refs.emoticonPanel, this.$refs.editor)
+			// 自定义处理粘贴的文本内容
+			this.editor.customConfig.pasteTextHandle = function(content) {
+				content = content.replace(/<!--\[if gte mso [0-9]{1,2}\]>[\s\S]*?<!\[endif\]-->/ig, '')
 
+				content = content.replace(/<style>[\s\S]*?mso[\s\S]*?<\/style>/ig, '')
+
+				content = content.replace(/ lang=".+?"/ig, '')
+
+				content = content.replace(/<o:p><\/o:p>/ig, '')
+
+				content = content.replace(/ class="Mso.+?"/ig, '')
+
+				content = content.replace(/ mso-spacerun: 'yes'/ig, '')
+				content = content.replace(/<\/?\/p[^>]*>/g, '<br/>')
+				content = content.replace(/<(?!br)[^>]+>/g, '')
+				content = content.replace(/\r\n/g, '')
+				content = content.replace(/\n/g, '')
+				content = content.replace(/&nbsp;/g, ' ')
+				content = content.replace(/ /g, ' ') //dds为得到后的内容
+				content = content.replace(/^\s\s*/, '').replace(/\s\s*$/, '')
+				content = content.replace(/(^\s*)|(\s*$)/g, '')
+				console.log(content)
+				return content
+			}
 			this.setMenus() //设置菜单
 			this.editor.create() //创建编辑器
 			const panel = document.getElementById('wangeditor').getElementsByClassName('panel-control')[0]

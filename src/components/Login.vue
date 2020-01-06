@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import {Decrypt, Encrypt, getUrlKey} from '@/util/aes.js'
+import {Decrypt, Encrypt} from '@/util/aes.js'
 import QRCode from 'qrcodejs2' // 引入qrcode
 let sha256 = require('js-sha256').sha256
 export default {
@@ -72,7 +72,6 @@ export default {
 			console.log(data)
 			if (data.cmd === 1407) {
 				const info = Decrypt(data.data)
-				console.log(info)
 				sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
 				sessionStorage.setItem('Login', JSON.stringify(info.userinfo))
 				this.$router.push('/')
@@ -100,16 +99,10 @@ export default {
 			self.$refs[formName].validate((valid) => {
 				if (valid) {
 					this.loading = true
-					console.log(valid)
-					/*var obj = {
-						userid: '10925',
-						pass: sha256('111111')
-					}*/
 					this.count = 2
 					var obj = Encrypt({userid: self.ruleForm.username, pass: sha256(self.ruleForm.password)})
 					self.$socket.emit('chatevent', {cmd: 1401, data: obj}, function(e) {
 						const info = Decrypt(e)
-						console.log(info)
 						self.loading = false
 						if (info.state === 1) {
 							sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}))
@@ -145,7 +138,6 @@ export default {
 			self.$socket.emit('chatevent', {cmd: 1406, data: Encrypt('')}, function(e) {
 				self.loading = false
 				const data = Decrypt(e)
-				console.log(data)
 				if (data.state === 1) {
 					document.getElementById('qrcode').innerHTML = ''
 					self.qrcode = new QRCode('qrcode', {
@@ -168,22 +160,20 @@ export default {
 		clearTimeout(this.tiemOut)
 	},
 	mounted() {
-		// const getKey = this.$cookies.get('type')
-		/*const getKey = localStorage.getItem('type')
-		console.log('getKey', getKey)
-		if (getKey === null) {
-			this.$router.push('/Check')
-			return false
-		}*/
+		const backMsg = sessionStorage.getItem('backMsg')
+		if (backMsg !== null) {
+			sessionStorage.removeItem('backMsg')
+			this.$alert(backMsg, '提示', {
+				confirmButtonText: '确定'
+			})
+		}
 		const reload = sessionStorage.getItem('reload')
-		console.log('reload', reload, typeof reload)
+		console.log(reload)
 		if (reload === '1') {
 			sessionStorage.removeItem('reload')
 			this.$router.go(0)
 		}
-		sessionStorage.setItem('serverName', getUrlKey('server'))
 		const LoginInfo = sessionStorage.getItem('LoginInfo')
-		console.log('LoginInfostart', JSON.parse(LoginInfo))
 		const self = this
 		var timerOne = window.setInterval(() => {
 			if (self.$socket) {
@@ -191,8 +181,8 @@ export default {
 				if (LoginInfo !== null) {
 					console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
 					self.$socket.emit('chatevent', {cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))}, function(e) {
+						console.log('loginsss', e)
 						const info = Decrypt(e)
-						console.log(info)
 						self.loading = false
 						if (info.state === 1) {
 							sessionStorage.setItem('LoginInfo', JSON.stringify({
@@ -207,16 +197,17 @@ export default {
 							self.$alert(info.msg, '提示', {
 								confirmButtonText: '确定'
 							})
+							return false
 						}
 					})
+				} else {
+					const Login = sessionStorage.getItem('Login')
+					if (Login !== null) {
+						this.$router.push('/')
+						return false
+					}
+					this.getQr()
 				}
-				const Login = sessionStorage.getItem('Login')
-				console.log('Login', Login)
-				if (Login !== null) {
-					this.$router.push('/')
-					return false
-				}
-				this.getQr()
 			}
 		}, 500)
 	}

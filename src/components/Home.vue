@@ -159,14 +159,6 @@
 							<div class="contact-header">
 								<div>{{Talkinfo.nick}}</div>
 							</div>
-							<!--<div class="contact-header" v-if="Talkinfo.type==='friends'">
-								<div>{{Talkinfo.nick}}</div>
-							</div>
-							<header class="chat-header j-chat-header" v-else-if="Talkinfo.type==='groups'" @click="showmember">
-								<div class="dialog-title">{{Talkinfo.nick}}</div>
-								<div class="dialog-extend">({{Talkinfo.member.length}})</div>
-								<i class="member-status down"></i>
-							</header>-->
 							<div class="chat-body" id="chat-body">
 								<div class="message-list-scroll">
 									<div class="chat-tips">
@@ -193,8 +185,8 @@
 															</viewer>
 														</div>
 														<div class="message-status">
-															<!--<i class="app-icon-bag i-waiting" v-show="wait && index === (Talkinfo.list.length-1)"></i>-->
-															<i class="app-icon-bag i-waiting" v-show="item.wait"></i>
+															<i class="app-icon-bag i-error" v-show="item.error"></i>
+															<i class="app-icon-bag i-waiting" v-show="item.wait && !item.error"></i>
 														</div>
 													</div>
 												</div>
@@ -224,6 +216,9 @@
 														<div class="message-status"></div>
 													</div>
 												</div>
+											</div>
+											<div :data-index="item.msgType" class="msg j-msg msg-system mt24" v-else-if="item.msgType===5">
+												<div class="message-info">{{item.msg}}</div>
 											</div>
 										</div>
 									</div>
@@ -369,17 +364,20 @@ export default {
 	sockets: {
 		chatevent(data) { //监听message事件，方法是后台定义和提供的
 			const self = this
+			const tbData = Decrypt(data.data)
 			if (data.cmd === 1405) {
-				const info = Decrypt(data.data)
 				const _this = this
-				_this.$alert(info, '提示', {
+				_this.$alert(tbData, '提示', {
 					confirmButtonText: '确定',
 					callback: () => {
 						_this.closesocket(3)
 					}
 				})
+			} else if (data.cmd === 1160) { // 群名称改变
+				self.changeInfo(data.cmd, tbData)
+			} else if (data.cmd === 1165) { // 群头像改变
+				self.changeInfo(data.cmd, tbData)
 			} else if (data.cmd === 1403) {
-				const tbData = Decrypt(data.data)
 				console.log(tbData)
 				tbData.forEach((item) => {
 					let msgType = 3
@@ -391,7 +389,8 @@ export default {
 						type = 'groups'
 					}
 					let headUrl = self.meUrl
-					if (item.type === 0) {
+					switch (item.type) {
+					case 0://文字消息
 						const arr = item.body.match(/\[(.+?)\]/g)
 						if (arr) {
 							arr.map((e) => {
@@ -399,9 +398,15 @@ export default {
 								item.body = item.body.replace(e, str)
 							})
 						}
-					} else {
-						// item.body = '<img src="' + item.file_url + '" class="sendImg">'
+						break
+					case 2://视频信息
+					case 4://图片信息
 						item.body = item.file_url
+						break
+					case 5://提示信息
+					case 6://撤回消息提示
+						msgType = 5
+						break
 					}
 					self.selectTalk({
 						head_url: '',
@@ -412,7 +417,7 @@ export default {
 						from_uid: item.from_uid,
 						groupId: item.group_id,
 						newCount: tbData.length,
-						list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
+						list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type, sign: item.sign}],
 						type: type,
 						editor: '',
 						msgType: msgType
@@ -446,11 +451,11 @@ export default {
 			this.activeName = e
 			this.showActive = e
 		},
-		talkClick(e) {
-			let body = this.$refs.editor.getHtml().replace('<p>', '')
-			body = body.replace('</p>', '')
-			body = body.replace('<br>', '')
-			this.TalkList[this.TalkClick].editor = body
+		talkClick(e, save = true) {
+			if (save) {
+				let body = this.$refs.editor.getHtml()
+				this.TalkList[this.TalkClick].editor = body
+			}
 			this.selectIndex = e
 			this.TalkList[e].newCount = 0
 			this.Talkinfo = this.TalkList[e]
@@ -539,8 +544,11 @@ export default {
 			}
 			console.log(JSON.stringify(body))
 			let isGroup = 1
+			let toUid = ''
 			if (this.Talkinfo.type === 'friends') {
 				isGroup = 0
+				console.log('frTalk', self.Talkinfo)
+				toUid = (this.Talkinfo.uid === this.mUid) ? this.Talkinfo.from_uid : this.Talkinfo.uid
 			}
 			if (this.showActive !== 'first') {
 				return
@@ -549,7 +557,7 @@ export default {
 			var obj = {
 				from_uid: this.mUid, //我自己的uid
 				is_group: isGroup, //是否是群消息 0：私聊消息（需要设置to_uid） 1：群消息（需要设置group_id）
-				to_uid: this.Talkinfo.uid, //好友的uid 主要不是uuid
+				to_uid: toUid, //好友的uid 主要不是uuid
 				group_id: this.Talkinfo.groupId, //群消息 id
 				type: type, //消息内容类型 0：文字，1：语音 2：视频 3：文件 4:图片 5:提示消息 6：撤回消息 7：个人名片  暂时只支持 （0 4）
 				body: sendBody, //文字信息内容
@@ -565,18 +573,25 @@ export default {
 				uid: self.Talkinfo.uid,
 				groupId: self.Talkinfo.groupId,
 				newCount: 0,
-				list: [{msg: body, head_url: self.meUrl, msgType: 2, wait: true, type: type}],
+				list: [{msg: body, head_url: self.meUrl, msgType: 2, wait: true, error: false, type: type}],
 				type: self.Talkinfo.type,
+				from_uid: toUid,
 				editor: '',
 				wait: true
 			})
-			console.log(sendBody)
+			console.log('sendBody', sendBody)
 			self.$socket.emit('chatevent', {cmd: 1403, data: Encrypt(obj)}, function(e) {
 				const info = Decrypt(e)
+				// const info = {msg: '你不是对方的好友', state: 0}
 				console.log('backInfo', info)
+				self.wait = false
 				if (info['state'] === 1) {
-					self.wait = false
 					self.TalkList[0].list[length].wait = false
+				} else {
+					self.TalkList[0].list[length].error = true
+					self.$alert(info.msg, '提示', {
+						confirmButtonText: '确定'
+					})
 				}
 			})
 		},
@@ -648,14 +663,13 @@ export default {
 				}
 			this.selectTalk(Talk)
 		},
-		selectTalk(data, check = true) {
+		selectTalk(data, check = true, refersh = true) {
 			console.log('data', data)
 			let msgType = 2
 			if (data.hasOwnProperty('msgType')) {
 				msgType = data.msgType
 				delete data.msgType
 			}
-			console.log(msgType)
 			let info = ''
 			if (data.type === 'friends') {
 				if (data.uid === this.mUid) {
@@ -691,6 +705,7 @@ export default {
 				if (info !== '') {
 					console.log('info', info)
 					data.head_url = info.head_url
+					data.userInfoList = info.userInfoList
 					data.nick = info.nick + '(' + info.userInfoList.length + ')'
 					if (msgType === 3) {
 						const findUser = info.userInfoList.find(n => n.uid === data.from_uid)
@@ -701,26 +716,26 @@ export default {
 					}
 				}
 			}
-			if (info === '') {
-				this.initWebSocket()
-				this.selectTalk(data, check)
+			if (info === '' && refersh) {
+				this.initWebSocket(data, check)
 				return
 			}
 			const self = this
 			let length = 0
-			console.log('test', data.type)
+			let findIndex = ''
+			let newSelectIndex = 0
 			if (this.TalkList.length === 0) {
+				if (data.list[0].type === 6) {
+					return
+				}
 				check = true
 				if (data.uid === this.mUid) {
 					data.uid = data.from_uid
 				}
 				this.TalkList = [data]
 			} else {
-				let body = self.$refs.editor.getHtml().replace('<p>', '')
-				body = body.replace('</p>', '')
-				body = body.replace('<br>', '')
+				let body = self.$refs.editor.getHtml()
 				self.TalkList[self.TalkClick].editor = body
-				self.$refs.editor.setHtml('')
 				let wait = false
 				if (data.hasOwnProperty('wait')) {
 					wait = data.wait
@@ -733,48 +748,101 @@ export default {
 					} else {
 						findId = data.uid
 					}
-					console.log('findId', findId)
-					const findIndex = this.TalkList.findIndex(n => n.uid === findId)
+					findIndex = this.TalkList.findIndex(n => {
+						if (n.from_uid && n.from_uid !== self.mUid) {
+							return n.from_uid === findId
+						} else {
+							return n.uid === findId
+						}
+					})
 					if (~findIndex) {
-						let TheFind = [this.TalkList.find(n => n.uid === findId)]
+						let TheFind = [this.TalkList.find(n => {
+							if (n.from_uid && n.from_uid !== self.mUid) {
+								return n.from_uid === findId
+							} else {
+								return n.uid === findId
+							}
+						})]
+						console.log('findIndex', data, TheFind[0])
 						TheFind[0].lastTime = data.lastTime
 						TheFind[0].lastText = data.lastText
-						if (msgType === 3) {
-							TheFind[0].newCount = TheFind[0].newCount + 1
-						}
-						TheFind[0].list = TheFind[0].list.concat(data.list)
-						if (wait) {
-							length = TheFind[0].list.length - 1
+						if (data.list[0].type === 6) {
+							TheFind[0].lastText = ''
+							TheFind[0].list.forEach((value) => {
+								const findSign = `RECALL-` + value.sign
+								if (findSign === data.list[0].sign) {
+									value.msgType = data.list[0].msgType
+									value.msg = data.list[0].msg
+								}
+							})
+						} else {
+							if (msgType === 3) {
+								TheFind[0].newCount = TheFind[0].newCount + 1
+							}
+							TheFind[0].list = TheFind[0].list.concat(data.list)
+							if (wait) {
+								length = TheFind[0].list.length - 1
+							}
 						}
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
+						console.log('Talkinfo', this.Talkinfo)
+						newSelectIndex = this.TalkList.findIndex(n => {
+							if (n.from_uid && n.from_uid !== self.mUid) {
+								return n.from_uid === self.Talkinfo.uid
+							} else {
+								return n.uid === self.Talkinfo.uid
+							}
+						})
 					} else {
+						if (data.list[0].type === 6) {
+							return
+						}
 						const Talk = [data]
 						this.TalkList = Talk.concat(this.TalkList)
+						newSelectIndex = this.selectIndex + 1
 					}
 				} else {
-					const findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
-					console.log(findIndex)
+					findIndex = this.TalkList.findIndex(n => n.groupId === data.groupId)
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => n.groupId === data.groupId)]
 						TheFind[0].lastTime = data.lastTime
-						TheFind[0].lastText = data.lastText
-						if (msgType === 3) {
-							TheFind[0].newCount = TheFind[0].newCount + 1
-						}
-						TheFind[0].list = TheFind[0].list.concat(data.list)
-						if (wait) {
-							length = TheFind[0].list.length - 1
+						if (data.list[0].type === 6) {
+							TheFind[0].lastText = ''
+							TheFind[0].list.forEach((value) => {
+								const findSign = `RECALL-` + value.sign
+								if (findSign === data.list[0].sign) {
+									value.msgType = data.list[0].msgType
+									let msgUserInfo = TheFind[0].userInfoList.filter((value, index) => value.uid === data.from_uid)
+									value.msg = msgUserInfo[0].nick + '撤回了一条消息'
+								}
+							})
+						} else {
+							TheFind[0].lastText = data.lastText
+							if (msgType === 3) {
+								TheFind[0].newCount = TheFind[0].newCount + 1
+							}
+							TheFind[0].list = TheFind[0].list.concat(data.list)
+							if (wait) {
+								length = TheFind[0].list.length - 1
+							}
 						}
 						this.TalkList.splice(findIndex, 1)
 						this.TalkList = TheFind.concat(this.TalkList)
+						newSelectIndex = this.TalkList.findIndex(n => n.groupId === self.Talkinfo.groupId)
 					} else {
+						if (data.list[0].type === 6) {
+							return
+						}
 						const Talk = [data]
 						this.TalkList = Talk.concat(this.TalkList)
+						newSelectIndex = this.selectIndex + 1
 					}
 				}
 			}
+			console.log('tList', this.TalkList)
 			console.log('checkInfo', check)
+			console.log('toUid', data.uid)
 			if (check) {
 				this.selectIndex = 0
 				this.Talkinfo = this.TalkList[0]
@@ -788,19 +856,18 @@ export default {
 					self.$refs.editor.setFocus()
 				}, 1)
 			} else {
-				const index = this.selectIndex + 1
-				this.talkClick(index)
+				this.talkClick(newSelectIndex, false)
 			}
 			this.handleClick('first')
 			return length
 		},
-		initWebSocket() { /*初始化weosocket*/
+		initWebSocket(selectData = '', selectCheck = false) { /*初始化weosocket*/
 			const self = this
 			self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
 				const data = Decrypt(e)
 				console.log('1404', data)
 				if (data.state === 0) {
-					self.websocketclose()
+					self.websocketclose(2)
 					return
 				}
 				self.FidList = data.friends.map((e) => {
@@ -874,6 +941,9 @@ export default {
 					}
 					return -1
 				})
+				if (selectData !== '') {
+					self.selectTalk(selectData, selectCheck, false)
+				}
 			})
 		},
 		closesocket(type=2) {
@@ -957,7 +1027,7 @@ export default {
 					return
 				}
 				this.online = false
-				this.$confirm('网络连接恢复，是否重新登录?', '提示', {
+				/*this.$confirm('网络连接恢复，是否重新登录?', '提示', {
 					confirmButtonText: '确定',
 					cancelButtonText: '取消',
 					type: 'warning'
@@ -965,9 +1035,39 @@ export default {
 					this.$socket.emit('reconnect', 3)
 				}).catch(() => {
 					this.$socket.emit('reconnect', 2)
-				});
+				});*/
+				this.$socket.emit('reconnect', 3)
 			}
 
+		},
+		changeInfo(cmd, data){
+			console.log(cmd, data)
+			const self = this
+			this.GroupList.forEach((value) => {
+				value.info.forEach((values) => {
+					if(values.group_id === data.groupid){
+						if(cmd === 1160){
+							values.title = data.msg
+							values.nick = data.msg
+						} else if(cmd === 1165){
+							values.head_url = data.msg
+						}
+						console.log(values)
+					}
+				})
+			})
+			if (self.TalkList.length > 0) {
+				self.TalkList.forEach((values) => {
+					if(values.groupId === data.groupid){
+						if(cmd === 1160){
+							values.title = data.msg
+							values.nick = data.msg
+						} else if(cmd === 1165){
+							values.head_url = data.msg
+						}
+					}
+				})
+			}
 		}
 	},
 	destroyed() {
@@ -991,13 +1091,13 @@ export default {
 		}
 		window.addEventListener('online',  this.updateOnlineStatus)
 		window.addEventListener('offline', this.updateOnlineStatus)
-		const LoginInfo = sessionStorage.getItem('LoginInfo')
+		let LoginInfo = sessionStorage.getItem('LoginInfo')
 		console.log('LoginInfo', JSON.parse(LoginInfo))
 		let Login = sessionStorage.getItem('Login')
 		let timeOut = 10
 		if (LoginInfo !== null && Login === null) {
 			console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
-			timeOut = 100
+			timeOut = 200
 			_this.$socket.emit('chatevent', {cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))}, function(e) {
 				const info = Decrypt(e)
 				console.log(info)
@@ -1007,7 +1107,9 @@ export default {
 					Login = JSON.stringify(info.userinfo)
 					sessionStorage.setItem('Login', Login)
 				} else {
+					sessionStorage.setItem('backMsg', info.msg)
 					sessionStorage.removeItem('LoginInfo')
+					_this.websocketclose(3)
 				}
 			})
 		}
@@ -1036,24 +1138,24 @@ export default {
 		/*const self = this
 		setTimeout(function() {
 			const tbData = [{
-			at_list: "[]",
-			body: "http://filemixin.test.upcdn.net/2019/12/10925/1576652900/1.mp4",
-			body_id: 995681,
-			create_ts: "2019-12-02 09:34:13",
-			file_time: 0,
-			from_create_app: 0,
-			from_uid: 10926,
-			group_id: 176,
-			is_group: 1,
-			is_sync: 0,
-			is_systemmsg: 0,
-			is_web_receive: 0,
-			message_type: 0,
-			sign: "10926302751575250453677",
-			state: 0,
-			to_uid: 244,
-			type: 2,
-			upload_id: 0
+				at_list: "[]",
+				body: "1",
+				body_id: 998301,
+				create_ts: "2020-01-06 13:59:21",
+				file_time: 0,
+				from_create_app: 0,
+				from_uid: 10926,
+				group_id: 0,
+				is_group: 0,
+				is_sync: 0,
+				is_systemmsg: 0,
+				is_web_receive: 0,
+				message_type: 0,
+				sign: "10926855421578290284854",
+				state: 0,
+				to_uid: 10925,
+				type: 0,
+				upload_id: 0
 		}]
 			tbData.forEach((item) => {
 				let msgType = 3
@@ -1065,18 +1167,25 @@ export default {
 					type = 'groups'
 				}
 				let headUrl = self.meUrl
-				if (item.type === 0) {
-					const arr = item.body.match(/\[(.+?)\]/g)
-					if (arr) {
-						arr.map((e) => {
-							const str = emojiListFind(e)
-							item.body = item.body.replace(e, str)
-						})
+					switch (item.type) {
+					case 0://文字消息
+						const arr = item.body.match(/\[(.+?)\]/g)
+						if (arr) {
+							arr.map((e) => {
+								const str = emojiListFind(e)
+								item.body = item.body.replace(e, str)
+							})
+						}
+						break
+					case 2://视频信息
+					case 4://图片信息
+						item.body = item.file_url
+						break
+					case 5://提示信息
+					case 6://撤回消息提示
+						msgType = 5
+						break
 					}
-				} else {
-					// item.body = '<img src="' + item.file_url + '" class="sendImg">'
-					item.body = item.file_url
-				}
 				self.selectTalk({
 					head_url: '',
 					nick: '',
@@ -1086,13 +1195,13 @@ export default {
 					from_uid: item.from_uid,
 					groupId: item.group_id,
 					newCount: tbData.length,
-					list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type}],
+					list: [{msg: item.body, head_url: headUrl, msgType: msgType, type: item.type, sign: item.sign}],
 					type: type,
 					editor: '',
 					msgType: msgType
 				},false)
 			})
-		}, 8000)*/
+		}, 500)*/
 	}
 }
 </script>
