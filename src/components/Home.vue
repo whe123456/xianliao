@@ -1,7 +1,7 @@
 <template>
 	<div class="wrapper">
 		<el-scrollbar class="app_main">
-			<el-container v-loading="online">
+			<el-container>
 				<div class="main-inner-l">
 					<div class="inner-l-header">
 						<div class="user-info">
@@ -426,24 +426,76 @@ export default {
 			}
 		},
 		disconnect(type = 1) {
-			window.removeEventListener('online', this.updateOnlineStatus)
-			window.removeEventListener('offline', this.updateOnlineStatus)
+			// window.removeEventListener('online', this.updateOnlineStatus)
+			// window.removeEventListener('offline', this.updateOnlineStatus)
 			this.$socket.emit('reconnect', type)
 		},
 		reconnect(type = 1) {
+			console.log('reconnectType', type)
 			const self = this
-			this.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
-			})
-			sessionStorage.removeItem('Login')
 			if (type === 2) {
+				self.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
+				})
+				sessionStorage.removeItem('Login')
 				self.$router.push('/Login')
 			} else if (type === 3) {
+				self.$socket.emit('chatevent', {cmd: 1402, data: ''}, function(e) {
+				})
+				sessionStorage.removeItem('Login')
 				sessionStorage.setItem('reload', '1')
 				self.$router.push('/Login')
+			} else {
+				this.$message.closeAll()
+				this.online = false
+				this.initWebSocket()
 			}
 		},
 		connect() {
 			console.log('socket connected')
+			const self = this
+			let LoginInfo = sessionStorage.getItem('LoginInfo')
+			if (LoginInfo !== null && !self.loading) {
+				self.loading = true
+				console.log('loginssssss')
+				try {
+					self.$socket.emit('chatevent', {
+						cmd: 1401,
+						data: Encrypt(JSON.parse(LoginInfo))
+					}, function(e) {
+						console.log('loginssssss', e)
+						const info = Decrypt(e)
+						console.log('loginssssss', info)
+						self.loading = false
+						if (info.state === 1) {
+							sessionStorage.setItem('LoginInfo', JSON.stringify({
+								userid: info.userinfo.userid,
+								s_code: info.s_code
+							}), info)
+							const Login = JSON.stringify(info.userinfo)
+							sessionStorage.setItem('Login', Login)
+							self.initWebSocket()
+						} else {
+							sessionStorage.setItem('backMsg', info.msg)
+							sessionStorage.removeItem('LoginInfo')
+							sessionStorage.removeItem('Login')
+							self.websocketclose(3)
+						}
+					})
+				} catch (error) {
+					console.log('error', error)
+				}
+			}
+		},
+		connect_error() {	//这里监听 链接失败的事件 //链接失败 sccket会一直尝试去链接
+			if (this.online) {
+				return
+			}
+			this.online = true
+			this.$message({
+				message: '连接服务器异常',
+				duration: 0,
+				type: 'error'
+			})
 		}
 	},
 	methods: {
@@ -504,6 +556,11 @@ export default {
 			this.$refs.editor.setHtml(this.textarea)
 		},
 		sendMsg(type = 0, url = '') {
+			console.log('sendMsg', this.online)
+			if (this.online) {
+				this.$message.error('网络连接异常，请检查网络')
+				return
+			}
 			console.log('type', type)
 			let sendBody = ''
 			let fileUrl = ''
@@ -863,88 +920,93 @@ export default {
 		},
 		initWebSocket(selectData = '', selectCheck = false) { /*初始化weosocket*/
 			const self = this
-			self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
-				const data = Decrypt(e)
-				console.log('1404', data)
-				if (data.state === 0) {
-					self.websocketclose(2)
-					return
-				}
-				self.FidList = data.friends.map((e) => {
-					return e.friend_uid
-				})
-				const rData = data.friends.reduce((res, item, index) => {
-					/* eslint-disable */
-					item['py'] = pinyinUtil.getFirstLetter(item.nick.substring(0, 1)).toUpperCase()
-					/* eslint-disable */
-					item['index'] = index
-					if (item['nick_mark'] !== '') {
-						item['nick'] = item['nick_mark']
+			console.log('initWebSocket')
+			try {
+				self.$socket.emit('chatevent', {cmd: 1404, data: Encrypt('')}, function(e) {
+					const data = Decrypt(e)
+					console.log('1404', data)
+					if (data.state === 0) {
+						self.$socket.emit('connect', 1)
+						return
 					}
-					item['uid'] = item.friend_uid
-					res[index] = item
-					return res
-				}, [])
-				const friendsData = rData.reduce((res, item) => {
-					const index = res.findIndex(n => n.slice === item['py'])
-					if (~index) {
-						res[index].info.push(item)
-					} else {
-						res[res.length] = {
-							slice: item['py'],
-							info: [item]
+					self.FidList = data.friends.map((e) => {
+						return e.friend_uid
+					})
+					const rData = data.friends.reduce((res, item, index) => {
+						/* eslint-disable */
+						item['py'] = pinyinUtil.getFirstLetter(item.nick.substring(0, 1)).toUpperCase()
+						/* eslint-disable */
+						item['index'] = index
+						if (item['nick_mark'] !== '') {
+							item['nick'] = item['nick_mark']
 						}
-					}
-					return res
-				}, [])
-				self.FriendList = friendsData.sort((x, y) => {
-					if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
-						return 1
-					}
-					return -1
-				})
-				const gData = data.groups.reduce((res, item, index) => {
-					/* eslint-disable */
-					item['py'] = pinyinUtil.getFirstLetter(item.title.substring(0, 1)).toUpperCase()
-					/* eslint-disable */
-					item['nick'] = item['title']
-					item['index'] = index
-					const userInfoList = item.userInfoList.reduce((res, item, index) => {
-						item['nick'] = item['group_nick']?item['group_nick']:item['nick']
-						let arr1 = data.friends.filter( (value, index) => value['uid']==item['uid'])
-						if(arr1[0]){
-							item['nick'] = arr1[0]['nick_mark']?arr1[0]['nick_mark']:item['nick']
-						}
+						item['uid'] = item.friend_uid
 						res[index] = item
 						return res
 					}, [])
-					console.log('userInfoList',userInfoList)
-					res[index] = item
-					return res
-				}, [])
-				const groupsData = gData.reduce((res, item) => {
-					const index = res.findIndex(n => n.slice === item['py'])
-					if (~index) {
-						res[index].info.push(item)
-					} else {
-						res[res.length] = {
-							slice: item['py'],
-							info: [item]
+					const friendsData = rData.reduce((res, item) => {
+						const index = res.findIndex(n => n.slice === item['py'])
+						if (~index) {
+							res[index].info.push(item)
+						} else {
+							res[res.length] = {
+								slice: item['py'],
+								info: [item]
+							}
 						}
+						return res
+					}, [])
+					self.FriendList = friendsData.sort((x, y) => {
+						if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
+							return 1
+						}
+						return -1
+					})
+					const gData = data.groups.reduce((res, item, index) => {
+						/* eslint-disable */
+						item['py'] = pinyinUtil.getFirstLetter(item.title.substring(0, 1)).toUpperCase()
+						/* eslint-disable */
+						item['nick'] = item['title']
+						item['index'] = index
+						const userInfoList = item.userInfoList.reduce((res, item, index) => {
+							item['nick'] = item['group_nick'] ? item['group_nick'] : item['nick']
+							let arr1 = data.friends.filter((value, index) => value['uid'] == item['uid'])
+							if (arr1[0]) {
+								item['nick'] = arr1[0]['nick_mark'] ? arr1[0]['nick_mark'] : item['nick']
+							}
+							res[index] = item
+							return res
+						}, [])
+						console.log('userInfoList', userInfoList)
+						res[index] = item
+						return res
+					}, [])
+					const groupsData = gData.reduce((res, item) => {
+						const index = res.findIndex(n => n.slice === item['py'])
+						if (~index) {
+							res[index].info.push(item)
+						} else {
+							res[res.length] = {
+								slice: item['py'],
+								info: [item]
+							}
+						}
+						return res
+					}, [])
+					console.log(groupsData)
+					self.GroupList = groupsData.sort((x, y) => {
+						if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
+							return 1
+						}
+						return -1
+					})
+					if (selectData !== '') {
+						self.selectTalk(selectData, selectCheck, false)
 					}
-					return res
-				}, [])
-				console.log(groupsData)
-				self.GroupList = groupsData.sort((x, y) => {
-					if (x.slice.toLowerCase() > y.slice.toLowerCase()) {
-						return 1
-					}
-					return -1
 				})
-				if (selectData !== '') {
-					self.selectTalk(selectData, selectCheck, false)
-				}
-			})
+			} catch (error) {
+				console.log('error', error)
+			}
 		},
 		closesocket(type=2) {
 			const _this = this
@@ -1015,30 +1077,24 @@ export default {
 			this.UserSelect = false
 		},
 		updateOnlineStatus(e) {
-			console.log(e.type)
 			if (e.type === 'offline'){
 				if(this.online){
 					return
 				}
 				this.online = true
-				this.$message.error('网络连接异常，请检查网络')
+				this.$message({
+					message: '网络连接异常，请检查网络',
+					duration: 0,
+					type: 'error'
+				})
 			}else{
 				if(!this.online){
 					return
 				}
 				this.online = false
-				/*this.$confirm('网络连接恢复，是否重新登录?', '提示', {
-					confirmButtonText: '确定',
-					cancelButtonText: '取消',
-					type: 'warning'
-				}).then(() => {
-					this.$socket.emit('reconnect', 3)
-				}).catch(() => {
-					this.$socket.emit('reconnect', 2)
-				});*/
-				this.$socket.emit('reconnect', 3)
+				// this.$socket.emit('reconnect', 3)
 			}
-
+			console.log('updateOnlineStatus1211', this.online)
 		},
 		changeInfo(cmd, data){
 			console.log(cmd, data)
@@ -1091,28 +1147,8 @@ export default {
 		}
 		window.addEventListener('online',  this.updateOnlineStatus)
 		window.addEventListener('offline', this.updateOnlineStatus)
-		let LoginInfo = sessionStorage.getItem('LoginInfo')
-		console.log('LoginInfo', JSON.parse(LoginInfo))
 		let Login = sessionStorage.getItem('Login')
 		let timeOut = 10
-		if (LoginInfo !== null && Login === null) {
-			console.log({cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))})
-			timeOut = 200
-			_this.$socket.emit('chatevent', {cmd: 1401, data: Encrypt(JSON.parse(LoginInfo))}, function(e) {
-				const info = Decrypt(e)
-				console.log(info)
-				_this.loading = false
-				if (info.state === 1) {
-					sessionStorage.setItem('LoginInfo', JSON.stringify({userid: info.userinfo.userid, s_code: info.s_code}), info)
-					Login = JSON.stringify(info.userinfo)
-					sessionStorage.setItem('Login', Login)
-				} else {
-					sessionStorage.setItem('backMsg', info.msg)
-					sessionStorage.removeItem('LoginInfo')
-					_this.websocketclose(3)
-				}
-			})
-		}
 		setTimeout(function() {
 			console.log(Login)
 			if (Login === null) {
