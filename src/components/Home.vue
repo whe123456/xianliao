@@ -505,15 +505,23 @@ export default {
 		},
 		talkClick(e, save = true) {
 			if (save) {
-				let body = this.$refs.editor.getHtml()
-				this.TalkList[this.TalkClick].editor = body
+				try {
+					let body = this.$refs.editor.getHtml()
+					this.TalkList[this.TalkClick].editor = body
+				} catch (e) {
+
+				}
 			}
 			this.selectIndex = e
 			this.TalkList[e].newCount = 0
 			this.Talkinfo = this.TalkList[e]
 			this.TalkClick = e
-			this.$refs.editor.setHtml(this.TalkList[e].editor)
-			this.focusEditor()
+			try {
+				this.$refs.editor.setHtml(this.TalkList[e].editor)
+				this.focusEditor()
+			} catch (e) {
+
+			}
 			this.$nextTick(() => {
 				var div = document.getElementById('chat-body')
 				div.scrollTop = div.scrollHeight
@@ -650,6 +658,7 @@ export default {
 						confirmButtonText: '确定'
 					})
 				}
+				localStorage.setItem('TalkListInfo', JSON.stringify(self.TalkList))
 			})
 		},
 		nowTime() {
@@ -729,6 +738,7 @@ export default {
 			}
 			let info = ''
 			if (data.type === 'friends') {
+				console.log('friendsdata', (data.uid === this.mUid))
 				if (data.uid === this.mUid) {
 					this.FriendList.forEach((value) => {
 						const findinfo = value.info.find(n => n.uid === data.from_uid)
@@ -806,7 +816,7 @@ export default {
 						findId = data.uid
 					}
 					findIndex = this.TalkList.findIndex(n => {
-						if (n.from_uid && n.from_uid !== self.mUid) {
+						if (n.from_uid && n.from_uid !== self.mUid && n.type === 'friends') {
 							return n.from_uid === findId
 						} else {
 							return n.uid === findId
@@ -814,7 +824,7 @@ export default {
 					})
 					if (~findIndex) {
 						let TheFind = [this.TalkList.find(n => {
-							if (n.from_uid && n.from_uid !== self.mUid) {
+							if (n.from_uid && n.from_uid !== self.mUid && n.type === 'friends') {
 								return n.from_uid === findId
 							} else {
 								return n.uid === findId
@@ -897,6 +907,7 @@ export default {
 					}
 				}
 			}
+			localStorage.setItem('TalkListInfo', JSON.stringify(this.TalkList))
 			console.log('tList', this.TalkList)
 			console.log('checkInfo', check)
 			console.log('toUid', data.uid)
@@ -1000,6 +1011,12 @@ export default {
 						}
 						return -1
 					})
+					const TalkListInfo = localStorage.getItem('TalkListInfo')
+					console.log(TalkListInfo)
+					if (TalkListInfo!== null && TalkListInfo!== 'null') {
+						self.handleClick('first')
+						self.TalkList = JSON.parse(TalkListInfo)
+					}
 					if (selectData !== '') {
 						self.selectTalk(selectData, selectCheck, false)
 					}
